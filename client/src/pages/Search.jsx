@@ -5,7 +5,7 @@ import { SearchX, Search as SearchIcon } from 'lucide-react';
 import MediaCard from '../components/MediaCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 
-const API = 'http://localhost:5000/api';
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
 const Search = () => {
   const [searchParams] = useSearchParams();

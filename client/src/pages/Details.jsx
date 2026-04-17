@@ -5,7 +5,7 @@ import { Play, Star, Clock, Calendar, Award } from 'lucide-react';
 import MediaRow from '../components/MediaRow';
 import SkeletonLoader from '../components/SkeletonLoader';
 
-const API = 'http://localhost:5000/api';
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
 const Details = () => {
   const { id } = useParams();

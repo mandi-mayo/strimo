@@ -5,7 +5,7 @@ import { Play, Info, TrendingUp, Flame, Star, Sparkles, Tv } from 'lucide-react'
 import MediaRow from '../components/MediaRow';
 import SkeletonLoader from '../components/SkeletonLoader';
 
-const API = 'http://localhost:5000/api';
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
 const Home = () => {
   const [hero, setHero] = useState(null);

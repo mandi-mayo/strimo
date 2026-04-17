@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Clapperboard, TrendingUp, Star, Clock } from 'lucide-react';
 import MediaRow from '../components/MediaRow';
 
-const API = 'http://localhost:5000/api';
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
 const Movies = () => {
   const [popular, setPopular] = useState([]);
