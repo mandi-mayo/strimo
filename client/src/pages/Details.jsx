@@ -1,28 +1,51 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { Play, Star, Clock, Calendar, Award } from 'lucide-react';
+import MediaRow from '../components/MediaRow';
+import SkeletonLoader from '../components/SkeletonLoader';
+
+const API = 'http://localhost:5000/api';
 
 const Details = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const type = searchParams.get('type') || 'series';
+  const type = searchParams.get('type') || 'movie';
   const imdbParam = searchParams.get('imdb');
-  
+  const malParam = searchParams.get('mal');
+  const source = searchParams.get('source') || 'tmdb';
+
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [currentSeason, setCurrentSeason] = useState(1);
   const [currentEpisode, setCurrentEpisode] = useState(1);
+  const [episodes, setEpisodes] = useState([]);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
 
+  // Fetch details
   useEffect(() => {
     const fetchDetails = async () => {
+      setLoading(true);
       try {
-        const url = `http://localhost:5000/api/details/${id}?type=${type}${imdbParam ? '&imdb='+imdbParam : ''}`;
-        const response = await axios.get(url);
-        setDetails(response.data);
-        if (response.data.episodes && response.data.episodes.length > 0) {
-           setCurrentSeason(response.data.episodes[0].season);
-           setCurrentEpisode(response.data.episodes[0].number);
+        let data;
+        if (type === 'anime' && malParam) {
+          const res = await axios.get(`${API}/anime/details/${malParam}`);
+          data = res.data;
+        } else {
+          const url = `${API}/details/${id}?type=${type}${imdbParam ? '&imdb=' + imdbParam : ''}&source=${source}`;
+          const res = await axios.get(url);
+          data = res.data;
+        }
+        setDetails(data);
+
+        // Set initial season/episode
+        if (data.seasons && data.seasons.length > 0) {
+          setCurrentSeason(data.seasons[0].season_number);
+        } else if (data.episodes && data.episodes.length > 0) {
+          setCurrentSeason(data.episodes[0].season || 1);
+          setCurrentEpisode(data.episodes[0].number || 1);
+          setEpisodes(data.episodes);
         }
       } catch (error) {
         console.error("Failed to fetch details", error);
@@ -31,78 +54,290 @@ const Details = () => {
       }
     };
     fetchDetails();
-  }, [id, type, imdbParam]);
+    window.scrollTo(0, 0);
+  }, [id, type, imdbParam, malParam, source]);
 
-  if (loading) return <div className="spinner"></div>;
+  // Fetch episodes for selected season (TMDB)
+  useEffect(() => {
+    if (!details || type === 'anime' || !details.seasons || details.source !== 'tmdb') return;
+    setEpisodesLoading(true);
+    axios.get(`${API}/season/${details.tmdb_id || details.id}/${currentSeason}`)
+      .then(r => {
+        setEpisodes(r.data);
+        if (r.data.length > 0) {
+          setCurrentEpisode(r.data[0].number);
+        }
+      })
+      .catch(() => setEpisodes([]))
+      .finally(() => setEpisodesLoading(false));
+  }, [currentSeason, details]);
+
+  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
   if (!details) return <div className="error-txt">Failed to load content details.</div>;
 
-  const validImdbId = details.imdb_id;
-  const iframeSrc = type === 'series' 
-    ? `https://vidsrc.cc/v2/embed/tv/${validImdbId}/${currentSeason}/${currentEpisode}`
-    : `https://vidsrc.cc/v2/embed/movie/${validImdbId}`;
+  // Build player URL
+  const imdbId = details.imdb_id;
+  let playerSrc = null;
+  if (type === 'anime') {
+    // No embedded player for anime
+    playerSrc = null;
+  } else if (imdbId) {
+    playerSrc = type === 'series'
+      ? `https://vidsrc.cc/v2/embed/tv/${imdbId}/${currentSeason}/${currentEpisode}`
+      : `https://vidsrc.cc/v2/embed/movie/${imdbId}`;
+  }
+
+  const omdb = details.omdbRatings;
 
   return (
-    <div className="page-container" style={{paddingTop: 0}}>
-      {/* Hero Section */}
-      <div className="details-hero mt-20" style={{marginTop: '80px'}}>
-        <img src={details.image || 'https://via.placeholder.com/300x450'} alt={details.title} className="details-poster" />
-        <div className="details-info">
-          <h1>{details.title}</h1>
-          <div className="details-meta">
-             {details.rating && <span className="rating">★ {details.rating}</span>}
-             <span>{details.year}</span>
-             <span className="tag" style={{background: 'rgba(229, 9, 20, 0.2)', color: '#e50914', border: '1px solid #e50914'}}>{type.toUpperCase()}</span>
+    <div style={{ paddingTop: 0 }}>
+      {/* Backdrop Hero */}
+      <div className="details-backdrop">
+        <div
+          className="details-backdrop-img"
+          style={{ backgroundImage: `url(${details.backdrop || details.image})` }}
+        />
+        <div className="details-backdrop-gradient" />
+
+        <div className="details-hero">
+          <div className="details-poster-wrap">
+            <img
+              src={details.image || ''}
+              alt={details.title}
+              className="details-poster"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
           </div>
-          
-          <div style={{marginBottom: '1.5rem'}}>
-            {details.genres && details.genres.map(g => (
-                <span key={g} className="tag">{g}</span>
-            ))}
+          <div className="details-info">
+            <h1>{details.title}</h1>
+            {details.tagline && <p className="details-tagline">"{details.tagline}"</p>}
+
+            <div className="details-meta">
+              {details.rating && (
+                <span className="details-meta-item" style={{ color: '#f5c518', fontWeight: 700 }}>
+                  <Star size={15} fill="#f5c518" stroke="#f5c518" />
+                  {details.rating}/10
+                </span>
+              )}
+              <span className="details-meta-item">
+                <Calendar size={14} /> {details.year}
+              </span>
+              {details.runtime && (
+                <span className="details-meta-item">
+                  <Clock size={14} /> {details.runtime} min
+                </span>
+              )}
+              <span className="tag accent">
+                {type === 'series' ? 'TV SERIES' : type === 'anime' ? 'ANIME' : 'MOVIE'}
+              </span>
+            </div>
+
+            {/* Multi-source Ratings */}
+            {omdb && (
+              <div className="ratings-row">
+                {omdb.imdb && (
+                  <div className="rating-badge imdb">
+                    <span className="label">IMDb</span>
+                    <span className="value">{omdb.imdb}</span>
+                  </div>
+                )}
+                {omdb.rottenTomatoes && (
+                  <div className="rating-badge rt">
+                    <span className="label">🍅</span>
+                    <span className="value">{omdb.rottenTomatoes}</span>
+                  </div>
+                )}
+                {omdb.metacritic && omdb.metacritic !== 'N/A' && (
+                  <div className="rating-badge mc">
+                    <span className="label">Metacritic</span>
+                    <span className="value">{omdb.metacritic}</span>
+                  </div>
+                )}
+                {omdb.rated && omdb.rated !== 'N/A' && (
+                  <div className="rating-badge">
+                    <span className="value" style={{ color: 'var(--text-secondary)' }}>{omdb.rated}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Genres */}
+            {details.genres && details.genres.length > 0 && (
+              <div className="tags-row">
+                {details.genres.map(g => <span key={g} className="tag">{g}</span>)}
+              </div>
+            )}
+
+            {/* Awards */}
+            {omdb?.awards && omdb.awards !== 'N/A' && (
+              <p style={{ fontSize: '0.82rem', color: 'var(--gold)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Award size={14} /> {omdb.awards}
+              </p>
+            )}
+
+            <p className="details-desc">{details.description}</p>
+
+            {/* Actions */}
+            {playerSrc && (
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <a href="#player" className="btn btn-primary">
+                  <Play fill="white" size={18} /> Watch Now
+                </a>
+                {details.trailer && (
+                  <a href={details.trailer} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                    <Play size={18} /> Trailer
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Anime trailer */}
+            {type === 'anime' && details.trailer && (
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <a href={details.trailer} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                  <Play fill="white" size={18} /> Watch Trailer
+                </a>
+              </div>
+            )}
+
+            {/* Studios for anime */}
+            {details.studios && details.studios.length > 0 && (
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.8rem' }}>
+                Studio: <span style={{ color: 'var(--text-secondary)' }}>{details.studios.join(', ')}</span>
+              </p>
+            )}
           </div>
-          
-          <p className="details-desc">{details.description}</p>
         </div>
       </div>
 
       {/* Video Player */}
-      {validImdbId ? (
-          <div className="player-wrapper">
-             <h2 className="section-title" style={{paddingLeft: 0}}><span className="text-gradient">Watch</span> Now</h2>
-             <div className="player-container">
-               <iframe 
-                  src={iframeSrc}
-                  allowFullScreen
-                  title="Video Player"
-                  referrerPolicy="origin"
-                  sandbox="allow-same-origin allow-scripts allow-presentation"
-               ></iframe>
-             </div>
+      {playerSrc && (
+        <div className="player-section" id="player">
+          <div className="section-header" style={{ padding: 0, marginBottom: '1rem', marginTop: '1rem' }}>
+            <h2 className="section-title">
+              <Play size={20} color="#e50914" />
+              <span className="text-gradient">Watch</span> Now
+            </h2>
           </div>
-      ) : (
-          <div className="error-txt">No video stream available for this title (Missing IMDB ID).</div>
+          <div className="player-container">
+            <iframe
+              src={playerSrc}
+              allowFullScreen
+              title="Video Player"
+              referrerPolicy="origin"
+              sandbox="allow-same-origin allow-scripts allow-presentation"
+            />
+          </div>
+        </div>
       )}
 
-      {/* Episodes list for series */}
-      {type === 'series' && details.episodes && details.episodes.length > 0 && (
-          <div>
-              <h2 className="section-title">Episodes</h2>
-              <div className="episodes-grid">
-                  {details.episodes.map(ep => (
-                      <div 
-                         key={ep.id} 
-                         className={`episode-card ${ep.season === currentSeason && ep.number === currentEpisode ? 'active' : ''}`}
-                         onClick={() => {
-                             setCurrentSeason(ep.season);
-                             setCurrentEpisode(ep.number);
-                             window.scrollTo({ top: 400, behavior: 'smooth' });
-                         }}
-                      >
-                          <div className="ep-title">{ep.season}x{ep.number} - {ep.name}</div>
-                      </div>
-                  ))}
-              </div>
+      {/* Cast */}
+      {details.cast && details.cast.length > 0 && (
+        <div>
+          <div className="section-header">
+            <h2 className="section-title">Cast</h2>
           </div>
+          <div className="cast-grid">
+            {details.cast.map((actor, i) => (
+              <div key={i} className="cast-card">
+                {actor.image ? (
+                  <img src={actor.image} alt={actor.name} className="cast-img" loading="lazy" />
+                ) : (
+                  <div className="cast-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: 'var(--text-muted)' }}>
+                    {actor.name?.[0]}
+                  </div>
+                )}
+                <p className="cast-name">{actor.name}</p>
+                <p className="cast-character">{actor.character}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
+
+      {/* Season / Episode Picker */}
+      {type === 'series' && (details.seasons?.length > 0 || episodes.length > 0) && (
+        <div className="season-picker">
+          <div className="season-selector">
+            <h2 className="section-title" style={{ margin: 0 }}>Episodes</h2>
+            {details.seasons && details.seasons.length > 0 && (
+              <select
+                className="season-select"
+                value={currentSeason}
+                onChange={(e) => setCurrentSeason(Number(e.target.value))}
+              >
+                {details.seasons.map(s => (
+                  <option key={s.season_number} value={s.season_number}>
+                    Season {s.season_number} ({s.episode_count} eps)
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {episodesLoading ? (
+            <SkeletonLoader type="grid" count={6} />
+          ) : (
+            <div className="episodes-grid">
+              {episodes.map(ep => (
+                <div
+                  key={ep.id || ep.number}
+                  className={`episode-card ${ep.season === currentSeason && ep.number === currentEpisode ? 'active' : ''}`}
+                  onClick={() => {
+                    setCurrentSeason(ep.season || currentSeason);
+                    setCurrentEpisode(ep.number);
+                    const player = document.getElementById('player');
+                    if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                >
+                  {ep.image && (
+                    <img src={ep.image} alt={ep.name} className="episode-thumb" loading="lazy" />
+                  )}
+                  <div className="episode-info">
+                    <span className="ep-number">Episode {ep.number}</span>
+                    <div className="ep-title">{ep.name || `Episode ${ep.number}`}</div>
+                    <div className="ep-meta">
+                      {ep.runtime && <span>{ep.runtime} min</span>}
+                      {ep.rating ? <span> · ★ {Math.round(ep.rating * 10) / 10}</span> : null}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Anime episodes */}
+      {type === 'anime' && episodes.length > 0 && (
+        <div className="season-picker">
+          <h2 className="section-title" style={{ marginBottom: '1rem' }}>Episodes</h2>
+          <div className="episodes-grid">
+            {episodes.map(ep => (
+              <div key={ep.id || ep.number} className="episode-card">
+                <div className="episode-info">
+                  <span className="ep-number">Episode {ep.number}</span>
+                  <div className="ep-title">{ep.name || `Episode ${ep.number}`}</div>
+                  {ep.filler && <span className="tag" style={{ marginTop: '0.3rem' }}>Filler</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {details.recommendations && details.recommendations.length > 0 && (
+        <MediaRow
+          title="More Like This"
+          items={details.recommendations}
+          showType={true}
+        />
+      )}
+
+      <footer className="footer">
+        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & IMDbOT</p>
+      </footer>
     </div>
   );
 };
