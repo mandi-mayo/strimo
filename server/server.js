@@ -193,7 +193,51 @@ app.get('/api/discover/:genreId', async (req, res) => {
     }
 });
 
-// 8. Search (TMDB + IMDbOT combined)
+// Helper: Rank search results by relevance
+function rankSearchResults(results, query) {
+    const queryLower = query.toLowerCase().trim();
+
+    return results.sort((a, b) => {
+        const aTitle = (a.title || '').toLowerCase();
+        const bTitle = (b.title || '').toLowerCase();
+
+        // Score calculation
+        let scoreA = 0, scoreB = 0;
+
+        // 1. Exact match (highest priority)
+        if (aTitle === queryLower) scoreA += 1000;
+        if (bTitle === queryLower) scoreB += 1000;
+
+        // 2. Starts with query
+        if (aTitle.startsWith(queryLower)) scoreA += 500;
+        if (bTitle.startsWith(queryLower)) scoreB += 500;
+
+        // 3. Contains query as whole word
+        if (aTitle.includes(` ${queryLower}`) || aTitle.includes(`${queryLower} `)) scoreA += 300;
+        if (bTitle.includes(` ${queryLower}`) || bTitle.includes(`${queryLower} `)) scoreB += 300;
+
+        // 4. Partial match
+        if (aTitle.includes(queryLower)) scoreA += 100;
+        if (bTitle.includes(queryLower)) scoreB += 100;
+
+        // 5. Boost by rating (if available)
+        if (a.rating) scoreA += (a.rating / 10) * 50;
+        if (b.rating) scoreB += (b.rating / 10) * 50;
+
+        // 6. Boost by popularity (if available)
+        if (a.popularity) scoreA += Math.min(a.popularity / 10, 50);
+        if (b.popularity) scoreB += Math.min(b.popularity / 10, 50);
+
+        // 7. Tie-breaker: more recent content
+        const yearA = parseInt(a.year) || 0;
+        const yearB = parseInt(b.year) || 0;
+        if (yearA !== yearB) scoreA += (yearA - yearB) * 2;
+
+        return scoreB - scoreA;
+    });
+}
+
+// 8. Search (TMDB + OMDb combined with smart ranking)
 app.get('/api/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json([]);
@@ -211,7 +255,7 @@ app.get('/api/search', async (req, res) => {
                     .catch(() => [])
             );
         } else {
-            // Fallback: TVMaze + IMDbOT
+            // Fallback: TVMaze + OMDb
             promises.push(
                 axios.get(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(q)}`)
                     .then(r => r.data.map(item => ({
@@ -224,23 +268,29 @@ app.get('/api/search', async (req, res) => {
                     })))
                     .catch(() => [])
             );
-            promises.push(
-                axios.get(`https://search.imdbot.workers.dev/?q=${encodeURIComponent(q)}`)
-                    .then(r => {
-                        if (r.data?.description && Array.isArray(r.data.description)) {
-                            return r.data.description.map(item => ({
-                                id: item['#IMDB_ID'], imdb_id: item['#IMDB_ID'], title: item['#TITLE'],
-                                type: 'movie', image: item['#IMG_POSTER'], rating: null,
-                                description: item['#AKA'], year: item['#YEAR'], source: 'imdbot'
-                            }));
-                        }
-                        return [];
-                    })
-                    .catch(() => [])
-            );
+            if (OMDB_KEY) {
+                promises.push(
+                    axios.get(`http://www.omdbapi.com/?s=${encodeURIComponent(q)}&apikey=${OMDB_KEY}`)
+                        .then(r => {
+                            if (r.data && r.data.Search && Array.isArray(r.data.Search)) {
+                                return r.data.Search.map(item => ({
+                                    id: item.imdbID, imdb_id: item.imdbID, title: item.Title,
+                                    type: item.Type === 'series' ? 'series' : 'movie', image: item.Poster !== 'N/A' ? item.Poster : null, rating: null,
+                                    description: '', year: item.Year, source: 'omdb'
+                                }));
+                            }
+                            return [];
+                        })
+                        .catch(() => [])
+                );
+            }
         }
 
-        const results = (await Promise.all(promises)).flat().filter(item => item.image);
+        let results = (await Promise.all(promises)).flat().filter(item => item.image);
+
+        // Rank results by relevance
+        results = rankSearchResults(results, q);
+
         res.json(results);
     } catch (error) {
         console.error("Error searching:", error.message);
@@ -327,7 +377,7 @@ app.get('/api/details/:id', async (req, res) => {
                 source: 'tmdb'
             });
         } else {
-            // TVMaze / IMDbOT fallback
+            // TVMaze / OMDb fallback
             if (type === 'series') {
                 const response = await axios.get(`https://api.tvmaze.com/shows/${id}?embed=episodes`);
                 const show = response.data;
@@ -346,18 +396,28 @@ app.get('/api/details/:id', async (req, res) => {
                 });
             } else {
                 const imdbId = imdb || id;
-                const response = await axios.get(`https://search.imdbot.workers.dev/?tt=${imdbId}`);
-                const movie = response.data;
-                res.json({
-                    id: imdbId, imdb_id: imdbId, title: movie.short?.name, type: 'movie',
-                    image: movie.short?.image,
-                    rating: movie.short?.aggregateRating?.ratingValue,
-                    description: movie.short?.description,
-                    year: movie.short?.datePublished?.substring(0, 4) || 'N/A',
-                    genres: typeof movie.short?.genre === 'string' ? [movie.short.genre] : movie.short?.genre || [],
-                    actors: movie.short?.actor?.map(a => a.name) || [],
-                    source: 'imdbot'
-                });
+                if (OMDB_KEY) {
+                    const response = await axios.get(`http://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_KEY}`);
+                    const movie = response.data;
+                    if (movie.Response === 'True') {
+                        let rating = null;
+                        if (movie.imdbRating && movie.imdbRating !== 'N/A') rating = parseFloat(movie.imdbRating);
+                        res.json({
+                            id: imdbId, imdb_id: imdbId, title: movie.Title, type: 'movie',
+                            image: movie.Poster !== 'N/A' ? movie.Poster : null,
+                            rating: rating,
+                            description: movie.Plot !== 'N/A' ? movie.Plot : '',
+                            year: movie.Year || 'N/A',
+                            genres: movie.Genre && movie.Genre !== 'N/A' ? movie.Genre.split(', ') : [],
+                            actors: movie.Actors && movie.Actors !== 'N/A' ? movie.Actors.split(', ') : [],
+                            source: 'omdb'
+                        });
+                    } else {
+                        res.status(404).json({ error: 'Not found' });
+                    }
+                } else {
+                    res.status(404).json({ error: 'Not found' });
+                }
             }
         }
     } catch (error) {
@@ -473,25 +533,10 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 // UTILITY
 // ============================================================
 
-// 15. Get IMDB ID from TMDB ID (for video player)
-app.get('/api/get-imdb/:tmdbId', async (req, res) => {
-    try {
-        const { tmdbId } = req.params;
-        const type = req.query.type === 'series' ? 'tv' : 'movie';
-        if (TMDB_KEY) {
-            const response = await axios.get(`${TMDB_BASE}/${type}/${tmdbId}/external_ids?api_key=${TMDB_KEY}`);
-            res.json({ imdb_id: response.data.imdb_id });
-        } else {
-            res.json({ imdb_id: null });
-        }
-    } catch (error) {
-        res.json({ imdb_id: null });
-    }
-});
+// (Removed unused /api/get-imdb endpoint - IMDb IDs available in main data)
 
 app.listen(PORT, () => {
     console.log(`🎬 NetFricks server running on port ${PORT}`);
-    console.log(`   TMDB API: ${TMDB_KEY ? '✅ Connected' : '❌ No key (using fallback APIs)'}`);
     console.log(`   OMDB API: ${OMDB_KEY ? '✅ Connected' : '❌ No key (ratings unavailable)'}`);
     console.log(`   Jikan API: ✅ Connected (no key needed)`);
 });

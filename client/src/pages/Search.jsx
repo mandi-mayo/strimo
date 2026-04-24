@@ -69,7 +69,7 @@ const Search = () => {
         <h2 className="section-title">
           {query ? (
             <span>
-              Results for <span className="text-gradient">"{query}"</span>
+              Results for "{query}"
             </span>
           ) : (
             <span>Discover</span>
@@ -134,7 +134,7 @@ const Search = () => {
       ) : null}
 
       <footer className="footer">
-        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & IMDbOT</p>
+        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & OMDb</p>
       </footer>
     </div>
   );

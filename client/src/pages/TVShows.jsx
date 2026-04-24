@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Tv, TrendingUp, Star } from 'lucide-react';
 import MediaRow from '../components/MediaRow';
 
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
@@ -20,16 +19,15 @@ const TVShows = () => {
     <div className="page-container">
       <div className="section-header" style={{ marginTop: '1.5rem' }}>
         <h1 className="section-title" style={{ fontSize: '1.8rem' }}>
-          <Tv size={24} color="#2196f3" />
-          <span className="text-gradient-blue">TV Shows</span>
+          TV Shows
         </h1>
       </div>
 
-      <MediaRow title="Popular Now" items={popular} loading={loadingPop} icon={<TrendingUp size={18} color="#f5c518" />} />
-      <MediaRow title="Top Rated" items={topRated} loading={loadingTop} icon={<Star size={18} color="#46d369" />} />
+      <MediaRow title="Popular Now" items={popular} loading={loadingPop} />
+      <MediaRow title="Top Rated" items={topRated} loading={loadingTop} />
 
       <footer className="footer">
-        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & IMDbOT</p>
+        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & OMDb</p>
       </footer>
     </div>
   );

@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import MediaCard from './MediaCard';
 import SkeletonLoader from './SkeletonLoader';
 
-const MediaRow = ({ title, items = [], loading = false, gradient = '', showType = false, icon = null }) => {
+const MediaRow = ({ title, items = [], loading = false, showType = false, icon = null }) => {
   const rowRef = useRef(null);
 
   const scroll = (direction) => {
@@ -20,7 +20,7 @@ const MediaRow = ({ title, items = [], loading = false, gradient = '', showType 
       <div className="section-header">
         <h2 className="section-title">
           {icon}
-          <span className={gradient || ''}>{title}</span>
+          <span>{title}</span>
         </h2>
       </div>
 

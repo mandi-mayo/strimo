@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Play, Star, Clock, Calendar, Award } from 'lucide-react';
 import MediaRow from '../components/MediaRow';
 import SkeletonLoader from '../components/SkeletonLoader';
+import VideoPlayer from '../components/VideoPlayer';
 
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
@@ -22,6 +23,15 @@ const Details = () => {
   const [currentEpisode, setCurrentEpisode] = useState(1);
   const [episodes, setEpisodes] = useState([]);
   const [episodesLoading, setEpisodesLoading] = useState(false);
+
+  // Video playback state
+  const [playbackStatus, setPlaybackStatus] = useState('idle'); // idle, loading, playing, error
+
+  // Memoized callback to prevent unnecessary re-renders in VideoPlayer
+  const handlePlaybackStateChange = useCallback((status) => {
+    setPlaybackStatus(status);
+    console.log(`📊 Playback status: ${status}`);
+  }, []);
 
   // Fetch details
   useEffect(() => {
@@ -57,6 +67,12 @@ const Details = () => {
     window.scrollTo(0, 0);
   }, [id, type, imdbParam, malParam, source]);
 
+  // Reset player state when episode, season, or title changes
+  useEffect(() => {
+    setPlaybackStatus('idle');
+    console.log(`🎬 Video source changed: Season ${currentSeason}, Episode ${currentEpisode}`);
+  }, [currentSeason, currentEpisode, id]);
+
   // Fetch episodes for selected season (TMDB)
   useEffect(() => {
     if (!details || type === 'anime' || !details.seasons || details.source !== 'tmdb') return;
@@ -75,17 +91,68 @@ const Details = () => {
   if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
   if (!details) return <div className="error-txt">Failed to load content details.</div>;
 
-  // Build player URL
   const imdbId = details.imdb_id;
-  let playerSrc = null;
-  if (type === 'anime') {
-    // No embedded player for anime
-    playerSrc = null;
-  } else if (imdbId) {
-    playerSrc = type === 'series'
-      ? `https://vidsrc.cc/v2/embed/tv/${imdbId}/${currentSeason}/${currentEpisode}`
-      : `https://vidsrc.cc/v2/embed/movie/${imdbId}`;
-  }
+  
+  // Define multiple reliable sources with proper error handling
+  const getSources = () => {
+    const tmdbId = details.tmdb_id || details.id;
+    if (type === 'anime') return [];
+
+    const sources = [];
+
+    if (type === 'series' && tmdbId) {
+      // TV Series sources
+      sources.push({
+        name: '🎬 VidLink (Recommended)',
+        url: `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+        priority: 1
+      });
+      sources.push({
+        name: '📺 VidSrc TO',
+        url: `https://vidsrc.to/embed/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+        priority: 2
+      });
+      sources.push({
+        name: '🔗 VidSrc ME',
+        url: `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&s=${currentSeason}&e=${currentEpisode}`,
+        priority: 3
+      });
+      sources.push({
+        name: '📡 Alternative Server',
+        url: `https://vidsrc.net/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
+        priority: 4
+      });
+    } else if (tmdbId || imdbId) {
+      // Movies sources
+      const movieId = tmdbId || imdbId;
+      sources.push({
+        name: '🎬 VidLink (Recommended)',
+        url: `https://vidlink.pro/movie/${movieId}`,
+        priority: 1
+      });
+      sources.push({
+        name: '📺 VidSrc TO',
+        url: `https://vidsrc.to/embed/movie/${movieId}`,
+        priority: 2
+      });
+      sources.push({
+        name: '🔗 VidSrc ME',
+        url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}${imdbId ? '&imdb=' + imdbId : ''}`,
+        priority: 3
+      });
+      sources.push({
+        name: '📡 Alternative Server',
+        url: `https://vidsrc.net/embed/movie?tmdb=${tmdbId}${imdbId ? '&imdb=' + imdbId : ''}`,
+        priority: 4
+      });
+    }
+
+    return sources.sort((a, b) => a.priority - b.priority);
+  };
+
+  const sources = getSources();
+  const playerSrc = sources.length > 0 ? sources[0]?.url : null;
+  const playerUnavailable = !playerSrc && type !== 'anime';
 
   const omdb = details.omdbRatings;
 
@@ -214,19 +281,36 @@ const Details = () => {
       {playerSrc && (
         <div className="player-section" id="player">
           <div className="section-header" style={{ padding: 0, marginBottom: '1rem', marginTop: '1rem' }}>
-            <h2 className="section-title">
-              <Play size={20} color="#e50914" />
-              <span className="text-gradient">Watch</span> Now
+            <h2 className="section-title" style={{ margin: 0 }}>
+              Watch Now
             </h2>
           </div>
-          <div className="player-container">
-            <iframe
-              src={playerSrc}
-              allowFullScreen
-              title="Video Player"
-              referrerPolicy="origin"
-              sandbox="allow-same-origin allow-scripts allow-presentation"
-            />
+
+          <VideoPlayer
+            sources={sources}
+            title={details.title}
+            onPlaybackStateChange={handlePlaybackStateChange}
+            loadingTimeout={15000}
+          />
+        </div>
+      )}
+
+      {/* Player Unavailable */}
+      {playerUnavailable && (
+        <div className="player-section" id="player">
+          <div className="section-header" style={{ padding: 0, marginBottom: '1rem', marginTop: '1rem' }}>
+            <h2 className="section-title">
+              Watch Now
+            </h2>
+          </div>
+          <div style={{
+            padding: '2rem',
+            backgroundColor: 'rgba(255, 107, 53, 0.1)',
+            borderRadius: '0.5rem',
+            textAlign: 'center',
+            color: 'var(--text-secondary)'
+          }}>
+            <p>Video player unavailable for this title. Please try external streaming services.</p>
           </div>
         </div>
       )}
@@ -336,7 +420,7 @@ const Details = () => {
       )}
 
       <footer className="footer">
-        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & IMDbOT</p>
+        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & OMDb</p>
       </footer>
     </div>
   );

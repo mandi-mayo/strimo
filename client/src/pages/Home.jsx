@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Play, Info, TrendingUp, Flame, Star, Sparkles, Tv } from 'lucide-react';
+import { Play, Info } from 'lucide-react';
 import MediaRow from '../components/MediaRow';
 import SkeletonLoader from '../components/SkeletonLoader';
 
@@ -10,56 +10,35 @@ const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 const Home = () => {
   const [hero, setHero] = useState(null);
   const [trending, setTrending] = useState([]);
-  const [popularMovies, setPopularMovies] = useState([]);
-  const [popularTV, setPopularTV] = useState([]);
-  const [topRated, setTopRated] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
   const [anime, setAnime] = useState([]);
 
   const [loadingHero, setLoadingHero] = useState(true);
-  const [loadingMovies, setLoadingMovies] = useState(true);
-  const [loadingTV, setLoadingTV] = useState(true);
-  const [loadingTopRated, setLoadingTopRated] = useState(true);
-  const [loadingUpcoming, setLoadingUpcoming] = useState(true);
   const [loadingAnime, setLoadingAnime] = useState(true);
 
   useEffect(() => {
-    // Fetch all sections in parallel
+    // Fetch essential sections only
     axios.get(`${API}/trending`)
       .then(r => {
         setTrending(r.data);
         if (r.data.length > 0) {
-          // Pick a random item from top 5 for hero
           const heroIdx = Math.floor(Math.random() * Math.min(5, r.data.length));
           setHero(r.data[heroIdx]);
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Trending fetch error:", err.message);
+      })
       .finally(() => setLoadingHero(false));
 
-    axios.get(`${API}/popular/movies`)
-      .then(r => setPopularMovies(r.data))
-      .catch(() => {})
-      .finally(() => setLoadingMovies(false));
-
-    axios.get(`${API}/popular/tv`)
-      .then(r => setPopularTV(r.data))
-      .catch(() => {})
-      .finally(() => setLoadingTV(false));
-
-    axios.get(`${API}/top-rated/movie`)
-      .then(r => setTopRated(r.data))
-      .catch(() => {})
-      .finally(() => setLoadingTopRated(false));
-
-    axios.get(`${API}/upcoming`)
-      .then(r => setUpcoming(r.data))
-      .catch(() => {})
-      .finally(() => setLoadingUpcoming(false));
-
     axios.get(`${API}/anime/trending`)
-      .then(r => setAnime(r.data))
-      .catch(() => {})
+      .then(r => {
+        console.log("Anime trending response:", r.data);
+        setAnime(r.data || []);
+      })
+      .catch((err) => {
+        console.error("Anime trending fetch error:", err.message);
+        setAnime([]);
+      })
       .finally(() => setLoadingAnime(false));
   }, []);
 
@@ -77,14 +56,12 @@ const Home = () => {
           <div className="hero-gradient" />
           <div className="hero-content">
             <div className="hero-badge">
-              <TrendingUp size={14} />
               Trending Now
             </div>
             <h1 className="hero-title">{hero.title}</h1>
             <div className="hero-meta">
               {hero.rating && (
                 <span className="hero-meta-item rating">
-                  <Star size={14} fill="#f5c518" stroke="#f5c518" />
                   {hero.rating}
                 </span>
               )}
@@ -117,48 +94,17 @@ const Home = () => {
         title="Trending This Week"
         items={trending}
         loading={loadingHero}
-        gradient="text-gradient"
         showType={true}
-        icon={<Flame size={20} color="#e50914" />}
-      />
-
-      <MediaRow
-        title="Popular Movies"
-        items={popularMovies}
-        loading={loadingMovies}
-        icon={<Sparkles size={18} color="#f5c518" />}
-      />
-
-      <MediaRow
-        title="Popular TV Shows"
-        items={popularTV}
-        loading={loadingTV}
-        icon={<Tv size={18} color="#2196f3" />}
-      />
-
-      <MediaRow
-        title="Top Rated"
-        items={topRated}
-        loading={loadingTopRated}
-        gradient="text-gradient-blue"
-        icon={<Star size={18} color="#46d369" />}
-      />
-
-      <MediaRow
-        title="Coming Soon"
-        items={upcoming}
-        loading={loadingUpcoming}
       />
 
       <MediaRow
         title="Trending Anime"
         items={anime}
         loading={loadingAnime}
-        gradient="text-gradient-purple"
       />
 
       <footer className="footer">
-        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & IMDbOT</p>
+        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & OMDb</p>
       </footer>
     </div>
   );

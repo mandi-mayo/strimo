@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Film, Menu, X } from 'lucide-react';
+import { Search, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const [query, setQuery] = useState('');
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
+      // Remove scroll effect - navbar is always visible
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -30,27 +29,22 @@ const Navbar = () => {
     }
   };
 
-  const isActive = (path) => location.pathname === path ? 'active' : '';
-
   return (
-    <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+    <nav className="navbar">
       <div className="nav-left">
         <Link to="/" className="nav-logo">
-          <Film color="#e50914" size={26} strokeWidth={2.5} />
-          <span>Net<span style={{ color: '#e50914' }}>Fricks</span></span>
+          <img src="/strimo-logo.svg" alt="STRIMO" style={{ height: '40px', width: 'auto' }} />
         </Link>
-
-        <div className={`nav-links ${mobileOpen ? 'mobile-open' : ''}`}>
-          <Link to="/" className={`link ${isActive('/')}`}>Home</Link>
-          <Link to="/movies" className={`link ${isActive('/movies')}`}>Movies</Link>
-          <Link to="/tv" className={`link ${isActive('/tv')}`}>TV Shows</Link>
-          <Link to="/anime" className={`link ${isActive('/anime')}`}>Anime</Link>
-        </div>
       </div>
 
       <div className="nav-right">
+        <nav className="nav-links">
+          <Link to="/" className="link">
+            Home
+          </Link>
+        </nav>
         <form className="search-form" onSubmit={handleSearch}>
-          <Search size={16} color="#5c5c70" />
+          <Search size={16} color="#959ca3" />
           <input
             type="text"
             className="search-input"
