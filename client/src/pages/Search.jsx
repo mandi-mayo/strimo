@@ -10,6 +10,7 @@ const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 const Search = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q');
+  const type = searchParams.get('type');
 
   const [results, setResults] = useState([]);
   const [animeResults, setAnimeResults] = useState([]);
@@ -26,24 +27,46 @@ const Search = () => {
       .catch(() => {});
   }, []);
 
-  // Search when query changes
+  // Search when query or type changes
   useEffect(() => {
-    if (!query) {
+    if (!query && !type) {
       setResults([]);
       setAnimeResults([]);
       return;
     }
+
     setLoading(true);
     setSelectedGenre(null);
 
-    Promise.all([
-      axios.get(`${API}/search?q=${encodeURIComponent(query)}`).catch(() => ({ data: [] })),
-      axios.get(`${API}/anime/search?q=${encodeURIComponent(query)}`).catch(() => ({ data: [] }))
-    ]).then(([mainRes, animeRes]) => {
-      setResults(mainRes.data);
-      setAnimeResults(animeRes.data);
-    }).finally(() => setLoading(false));
-  }, [query]);
+    if (query) {
+      // Search logic
+      Promise.all([
+        axios.get(`${API}/search?q=${encodeURIComponent(query)}`).catch(() => ({ data: [] })),
+        axios.get(`${API}/anime/search?q=${encodeURIComponent(query)}`).catch(() => ({ data: [] }))
+      ]).then(([mainRes, animeRes]) => {
+        setResults(mainRes.data);
+        setAnimeResults(animeRes.data);
+      }).finally(() => setLoading(false));
+    } else if (type) {
+      // Browse logic
+      let endpoint = '';
+      if (type === 'movie') endpoint = '/popular/movies';
+      else if (type === 'series') endpoint = '/popular/tv';
+      else if (type === 'anime') endpoint = '/anime/popular';
+
+      axios.get(`${API}${endpoint}`)
+        .then(r => {
+          if (type === 'anime') {
+            setAnimeResults(r.data);
+            setResults([]);
+          } else {
+            setResults(r.data);
+            setAnimeResults([]);
+          }
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [query, type]);
 
   // Genre browse
   const handleGenreClick = (genre) => {
@@ -70,6 +93,10 @@ const Search = () => {
           {query ? (
             <span>
               Results for "{query}"
+            </span>
+          ) : type ? (
+            <span style={{ textTransform: 'capitalize' }}>
+              {type === 'series' ? 'TV Shows' : type}
             </span>
           ) : (
             <span>Discover</span>

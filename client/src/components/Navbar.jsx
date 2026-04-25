@@ -39,8 +39,17 @@ const Navbar = () => {
 
       <div className="nav-right">
         <nav className="nav-links">
-          <Link to="/" className="link">
+          <Link to="/" className={`link ${location.pathname === '/' ? 'active' : ''}`}>
             Home
+          </Link>
+          <Link to="/search?type=movie" className={`link ${location.search.includes('type=movie') ? 'active' : ''}`}>
+            Movies
+          </Link>
+          <Link to="/search?type=series" className={`link ${location.search.includes('type=series') ? 'active' : ''}`}>
+            TV Shows
+          </Link>
+          <Link to="/search?type=anime" className={`link ${location.search.includes('type=anime') ? 'active' : ''}`}>
+            Anime
           </Link>
         </nav>
         <form className="search-form" onSubmit={handleSearch}>

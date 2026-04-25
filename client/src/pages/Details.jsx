@@ -5,6 +5,7 @@ import { Play, Star, Clock, Calendar, Award } from 'lucide-react';
 import MediaRow from '../components/MediaRow';
 import SkeletonLoader from '../components/SkeletonLoader';
 import VideoPlayer from '../components/VideoPlayer';
+import TrailerModal from '../components/TrailerModal';
 
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
 
@@ -18,6 +19,9 @@ const Details = () => {
 
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Trailer Modal State
+  const [showTrailer, setShowTrailer] = useState(false);
 
   const [currentSeason, setCurrentSeason] = useState(1);
   const [currentEpisode, setCurrentEpisode] = useState(1);
@@ -95,56 +99,91 @@ const Details = () => {
   
   // Define multiple reliable sources with proper error handling
   const getSources = () => {
-    const tmdbId = details.tmdb_id || details.id;
-    if (type === 'anime') return [];
+    const isTmdb = details.source === 'tmdb';
+    const tmdbId = isTmdb ? (details.tmdb_id || details.id) : details.tmdb_id;
+    const imdbId = details.imdb_id;
+    const malId = details.mal_id;
+    
+    // We need at least one valid ID
+    const mediaId = tmdbId || imdbId || malId;
+    
+    if (!mediaId) return [];
 
     const sources = [];
 
-    if (type === 'series' && tmdbId) {
+    if (type === 'anime') {
+      // Anime sources
+      if (malId) {
+        sources.push({
+          name: '🎬 VidLink PRO (Anime)',
+          url: `https://vidlink.pro/anime/${malId}/${currentEpisode}`,
+          priority: 1
+        });
+        sources.push({
+          name: '📺 VidSrc PM (Anime)',
+          url: `https://vidsrc.pm/embed/anime/${malId}/${currentEpisode}`,
+          priority: 2
+        });
+        sources.push({
+          name: '📽️ AutoEmbed (Anime)',
+          url: `https://autoembed.to/tv/tmdb/${malId}-${currentSeason}-${currentEpisode}`, // Fallback attempt
+          priority: 3
+        });
+      }
+    } else if (type === 'series') {
       // TV Series sources
+      if (tmdbId) {
+        sources.push({
+          name: '🎬 VidLink PRO (Ad-Free)',
+          url: `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+          priority: 1
+        });
+      }
       sources.push({
-        name: '🎬 VidLink (Recommended)',
-        url: `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
-        priority: 1
-      });
-      sources.push({
-        name: '📺 VidSrc TO',
-        url: `https://vidsrc.to/embed/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+        name: '📺 VidSrc PM',
+        url: imdbId 
+          ? `https://vidsrc.pm/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
+          : `https://vidsrc.pm/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
         priority: 2
       });
-      sources.push({
-        name: '🔗 VidSrc ME',
-        url: `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&s=${currentSeason}&e=${currentEpisode}`,
-        priority: 3
-      });
-      sources.push({
-        name: '📡 Alternative Server',
-        url: `https://vidsrc.net/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
-        priority: 4
-      });
-    } else if (tmdbId || imdbId) {
+      if (tmdbId) {
+        sources.push({
+          name: '📽️ AutoEmbed',
+          url: `https://autoembed.to/tv/tmdb/${tmdbId}-${currentSeason}-${currentEpisode}`,
+          priority: 3
+        });
+        sources.push({
+          name: '🎞️ VidSrc XYZ',
+          url: `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
+          priority: 4
+        });
+      }
+    } else {
       // Movies sources
-      const movieId = tmdbId || imdbId;
       sources.push({
-        name: '🎬 VidLink (Recommended)',
-        url: `https://vidlink.pro/movie/${movieId}`,
+        name: '🎬 VidLink PRO (Ad-Free)',
+        url: `https://vidlink.pro/movie/${mediaId}`,
         priority: 1
       });
       sources.push({
-        name: '📺 VidSrc TO',
-        url: `https://vidsrc.to/embed/movie/${movieId}`,
+        name: '📺 VidSrc PM',
+        url: imdbId
+          ? `https://vidsrc.pm/embed/movie?imdb=${imdbId}`
+          : `https://vidsrc.pm/embed/movie?tmdb=${tmdbId}`,
         priority: 2
       });
-      sources.push({
-        name: '🔗 VidSrc ME',
-        url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}${imdbId ? '&imdb=' + imdbId : ''}`,
-        priority: 3
-      });
-      sources.push({
-        name: '📡 Alternative Server',
-        url: `https://vidsrc.net/embed/movie?tmdb=${tmdbId}${imdbId ? '&imdb=' + imdbId : ''}`,
-        priority: 4
-      });
+      if (tmdbId) {
+        sources.push({
+          name: '📽️ AutoEmbed',
+          url: `https://autoembed.to/movie/tmdb/${tmdbId}`,
+          priority: 3
+        });
+        sources.push({
+          name: '🎞️ VidSrc XYZ',
+          url: `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`,
+          priority: 4
+        });
+      }
     }
 
     return sources.sort((a, b) => a.priority - b.priority);
@@ -245,27 +284,21 @@ const Details = () => {
             <p className="details-desc">{details.description}</p>
 
             {/* Actions */}
-            {playerSrc && (
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              {playerSrc && (
                 <a href="#player" className="btn btn-primary">
                   <Play fill="white" size={18} /> Watch Now
                 </a>
-                {details.trailer && (
-                  <a href={details.trailer} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
-                    <Play size={18} /> Trailer
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Anime trailer */}
-            {type === 'anime' && details.trailer && (
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <a href={details.trailer} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-                  <Play fill="white" size={18} /> Watch Trailer
-                </a>
-              </div>
-            )}
+              )}
+              {details.trailer && (
+                <button 
+                  onClick={() => setShowTrailer(true)} 
+                  className="btn btn-secondary"
+                >
+                  <Play size={18} /> Trailer
+                </button>
+              )}
+            </div>
 
             {/* Studios for anime */}
             {details.studios && details.studios.length > 0 && (
@@ -276,6 +309,14 @@ const Details = () => {
           </div>
         </div>
       </div>
+
+      {/* Trailer Modal */}
+      <TrailerModal 
+        isOpen={showTrailer} 
+        onClose={() => setShowTrailer(false)} 
+        trailerUrl={details.trailer} 
+        title={details.title} 
+      />
 
       {/* Video Player */}
       {playerSrc && (
@@ -398,11 +439,19 @@ const Details = () => {
           <h2 className="section-title" style={{ marginBottom: '1rem' }}>Episodes</h2>
           <div className="episodes-grid">
             {episodes.map(ep => (
-              <div key={ep.id || ep.number} className="episode-card">
+              <div
+                key={ep.id || ep.number}
+                className={`episode-card ${ep.number === currentEpisode ? 'active' : ''}`}
+                onClick={() => {
+                  setCurrentEpisode(ep.number);
+                  const player = document.getElementById('player');
+                  if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+              >
                 <div className="episode-info">
                   <span className="ep-number">Episode {ep.number}</span>
                   <div className="ep-title">{ep.name || `Episode ${ep.number}`}</div>
-                  {ep.filler && <span className="tag" style={{ marginTop: '0.3rem' }}>Filler</span>}
+                  {ep.filler && <span className="tag" style={{ marginTop: '0.3rem', background: 'rgba(255, 71, 87, 0.2)', color: '#ff4757' }}>Filler</span>}
                 </div>
               </div>
             ))}

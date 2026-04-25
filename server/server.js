@@ -86,7 +86,8 @@ app.get('/api/trending', async (req, res) => {
             .map(item => formatTMDB(item));
         res.json(results);
     } catch (error) {
-        console.error("Error fetching trending:", error.message);
+        console.error("❌ Error fetching trending:", error.response?.status || error.message);
+        if (error.response?.data) console.error("   Details:", error.response.data);
         res.status(500).json({ error: 'Failed to fetch trending content' });
     }
 });
