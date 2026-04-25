@@ -157,6 +157,16 @@ const Details = () => {
           url: `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
           priority: 4
         });
+        sources.push({
+          name: '🌐 MultiEmbed',
+          url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${currentSeason}&e=${currentEpisode}`,
+          priority: 5
+        });
+        sources.push({
+          name: '⚡ SmashyStream',
+          url: `https://embed.smashystream.com/play1.php?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
+          priority: 6
+        });
       }
     } else {
       // Movies sources
@@ -182,6 +192,16 @@ const Details = () => {
           name: '🎞️ VidSrc XYZ',
           url: `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`,
           priority: 4
+        });
+        sources.push({
+          name: '🌐 MultiEmbed',
+          url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
+          priority: 5
+        });
+        sources.push({
+          name: '⚡ SmashyStream',
+          url: `https://embed.smashystream.com/play1.php?tmdb=${tmdbId}`,
+          priority: 6
         });
       }
     }
