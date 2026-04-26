@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import MediaRow from '../components/MediaRow';
 
-const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
+const API = (import.meta.env.VITE_API_URL || 'https://strimo-b8v4.onrender.com') + '/api';
 
 const TVShows = () => {
   const [popular, setPopular] = useState([]);

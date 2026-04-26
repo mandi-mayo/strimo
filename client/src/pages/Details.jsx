@@ -7,7 +7,7 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import VideoPlayer from '../components/VideoPlayer';
 import TrailerModal from '../components/TrailerModal';
 
-const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
+const API = (import.meta.env.VITE_API_URL || 'https://strimo-b8v4.onrender.com') + '/api';
 
 const Details = () => {
   const { id } = useParams();
