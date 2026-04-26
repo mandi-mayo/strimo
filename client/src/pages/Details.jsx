@@ -28,6 +28,10 @@ const Details = () => {
   const [episodes, setEpisodes] = useState([]);
   const [episodesLoading, setEpisodesLoading] = useState(false);
 
+  // Pagination for large episode lists (Anime)
+  const [episodePage, setEpisodePage] = useState(0);
+  const [jumpEpisode, setJumpEpisode] = useState('');
+
   // Video playback state
   const [playbackStatus, setPlaybackStatus] = useState('idle'); // idle, loading, playing, error
 
@@ -75,6 +79,12 @@ const Details = () => {
   useEffect(() => {
     setPlaybackStatus('idle');
     console.log(`🎬 Video source changed: Season ${currentSeason}, Episode ${currentEpisode}`);
+    
+    // Auto-update episode page if currentEpisode goes out of current bounds
+    const newPage = Math.floor((currentEpisode - 1) / 100);
+    if (newPage >= 0 && newPage !== episodePage) {
+      setEpisodePage(newPage);
+    }
   }, [currentSeason, currentEpisode, id]);
 
   // Fetch episodes for selected season (TMDB)
@@ -265,6 +275,59 @@ const Details = () => {
 
   const omdb = details.omdbRatings;
 
+  // Helper for Anime episodes
+  const getAnimeEpisodesList = () => {
+    if (type !== 'anime') return episodes;
+    let list = [...episodes];
+    let maxEp = details.episodes_count || 0;
+    
+    if (!maxEp) {
+      if (details.status === 'Currently Airing') {
+         maxEp = 1200; // Arbitrary max for ongoing long-running anime
+      } else {
+         maxEp = list.length;
+      }
+    } else {
+      maxEp = Math.max(maxEp, list.length);
+    }
+    
+    const existingEpNumbers = new Set(list.map(e => e.number));
+    for (let i = 1; i <= maxEp; i++) {
+      if (!existingEpNumbers.has(i)) {
+        list.push({
+          id: `dummy-${i}`,
+          number: i,
+          name: `Episode ${i}`,
+        });
+      }
+    }
+    return list.sort((a, b) => a.number - b.number);
+  };
+
+  const allAnimeEpisodes = getAnimeEpisodesList();
+  const CHUNK_SIZE = 100;
+  
+  const currentList = type === 'anime' ? allAnimeEpisodes : episodes;
+  const totalEpisodePages = Math.ceil(currentList.length / CHUNK_SIZE);
+  
+  const chunkedAnimeEpisodes = type === 'anime' 
+    ? allAnimeEpisodes.slice(episodePage * CHUNK_SIZE, (episodePage + 1) * CHUNK_SIZE) 
+    : [];
+    
+  const chunkedSeriesEpisodes = type === 'series' 
+    ? episodes.slice(episodePage * CHUNK_SIZE, (episodePage + 1) * CHUNK_SIZE) 
+    : [];
+
+  const handleJumpToEpisode = (e) => {
+    e.preventDefault();
+    const epNum = Number(jumpEpisode);
+    if (epNum > 0) {
+      setCurrentEpisode(epNum);
+      const player = document.getElementById('player');
+      if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
     <div style={{ paddingTop: 0 }}>
       {/* Backdrop Hero */}
@@ -453,62 +516,153 @@ const Details = () => {
       {/* Season / Episode Picker */}
       {type === 'series' && (details.seasons?.length > 0 || episodes.length > 0) && (
         <div className="season-picker">
-          <div className="season-selector">
-            <h2 className="section-title" style={{ margin: 0 }}>Episodes</h2>
-            {details.seasons && details.seasons.length > 0 && (
-              <select
-                className="season-select"
-                value={currentSeason}
-                onChange={(e) => setCurrentSeason(Number(e.target.value))}
-              >
-                {details.seasons.map(s => (
-                  <option key={s.season_number} value={s.season_number}>
-                    Season {s.season_number} ({s.episode_count} eps)
-                  </option>
-                ))}
-              </select>
+          <div className="section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <h2 className="section-title" style={{ margin: 0 }}>Episodes</h2>
+              {details.seasons && details.seasons.length > 0 && (
+                <select
+                  className="season-select"
+                  value={currentSeason}
+                  onChange={(e) => setCurrentSeason(Number(e.target.value))}
+                >
+                  {details.seasons.map(s => (
+                    <option key={s.season_number} value={s.season_number}>
+                      Season {s.season_number} ({s.episode_count} eps)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {episodes.length > 0 && (
+              <form onSubmit={handleJumpToEpisode} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max={episodes.length > 0 ? Math.max(...episodes.map(e => e.number)) : 9999}
+                  value={jumpEpisode}
+                  onChange={(e) => setJumpEpisode(e.target.value)}
+                  placeholder="Ep Number"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
+                    padding: '0.5rem 0.8rem',
+                    borderRadius: '0.4rem',
+                    width: '100px'
+                  }}
+                />
+                <button type="submit" className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>
+                  Jump
+                </button>
+              </form>
             )}
           </div>
 
           {episodesLoading ? (
             <SkeletonLoader type="grid" count={6} />
           ) : (
-            <div className="episodes-grid">
-              {episodes.map(ep => (
-                <div
-                  key={ep.id || ep.number}
-                  className={`episode-card ${ep.season === currentSeason && ep.number === currentEpisode ? 'active' : ''}`}
-                  onClick={() => {
-                    setCurrentSeason(ep.season || currentSeason);
-                    setCurrentEpisode(ep.number);
-                    const player = document.getElementById('player');
-                    if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                >
-                  {ep.image && (
-                    <img src={ep.image} alt={ep.name} className="episode-thumb" loading="lazy" />
-                  )}
-                  <div className="episode-info">
-                    <span className="ep-number">Episode {ep.number}</span>
-                    <div className="ep-title">{ep.name || `Episode ${ep.number}`}</div>
-                    <div className="ep-meta">
-                      {ep.runtime && <span>{ep.runtime} min</span>}
-                      {ep.rating ? <span> · ★ {Math.round(ep.rating * 10) / 10}</span> : null}
+            <>
+              {totalEpisodePages > 1 && (
+                <div className="episode-pagination" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                  {Array.from({ length: totalEpisodePages }).map((_, i) => {
+                    const startEp = i * CHUNK_SIZE + 1;
+                    const endEp = Math.min((i + 1) * CHUNK_SIZE, episodes.length);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setEpisodePage(i)}
+                        className={`btn ${episodePage === i ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                      >
+                        {startEp} - {endEp}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="episodes-grid">
+                {chunkedSeriesEpisodes.map(ep => (
+                  <div
+                    key={ep.id || ep.number}
+                    className={`episode-card ${ep.season === currentSeason && ep.number === currentEpisode ? 'active' : ''}`}
+                    onClick={() => {
+                      setCurrentSeason(ep.season || currentSeason);
+                      setCurrentEpisode(ep.number);
+                      const player = document.getElementById('player');
+                      if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                  >
+                    {ep.image && (
+                      <img src={ep.image} alt={ep.name} className="episode-thumb" loading="lazy" />
+                    )}
+                    <div className="episode-info">
+                      <span className="ep-number">Episode {ep.number}</span>
+                      <div className="ep-title">{ep.name || `Episode ${ep.number}`}</div>
+                      <div className="ep-meta">
+                        {ep.runtime && <span>{ep.runtime} min</span>}
+                        {ep.rating ? <span> · ★ {Math.round(ep.rating * 10) / 10}</span> : null}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
 
       {/* Anime episodes */}
-      {type === 'anime' && episodes.length > 0 && (
+      {type === 'anime' && allAnimeEpisodes.length > 0 && (
         <div className="season-picker">
-          <h2 className="section-title" style={{ marginBottom: '1rem' }}>Episodes</h2>
+          <div className="section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <h2 className="section-title" style={{ margin: 0 }}>Episodes</h2>
+            
+            <form onSubmit={handleJumpToEpisode} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input 
+                type="number" 
+                min="1" 
+                max={allAnimeEpisodes.length}
+                value={jumpEpisode}
+                onChange={(e) => setJumpEpisode(e.target.value)}
+                placeholder="Ep Number"
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  padding: '0.5rem 0.8rem',
+                  borderRadius: '0.4rem',
+                  width: '100px'
+                }}
+              />
+              <button type="submit" className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>
+                Jump
+              </button>
+            </form>
+          </div>
+
+          {totalEpisodePages > 1 && (
+            <div className="episode-pagination" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '1rem' }}>
+              {Array.from({ length: totalEpisodePages }).map((_, i) => {
+                const startEp = i * CHUNK_SIZE + 1;
+                const endEp = Math.min((i + 1) * CHUNK_SIZE, allAnimeEpisodes.length);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setEpisodePage(i)}
+                    className={`btn ${episodePage === i ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                  >
+                    {startEp} - {endEp}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="episodes-grid">
-            {episodes.map(ep => (
+            {chunkedAnimeEpisodes.map(ep => (
               <div
                 key={ep.id || ep.number}
                 className={`episode-card ${ep.number === currentEpisode ? 'active' : ''}`}
