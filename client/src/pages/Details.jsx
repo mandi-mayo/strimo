@@ -167,6 +167,31 @@ const Details = () => {
           url: `https://embed.smashystream.com/play1.php?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
           priority: 6
         });
+        sources.push({
+          name: '🔥 SuperEmbed',
+          url: `https://superembed.stream/se_player.php?video_id=${tmdbId}&tmdb=1&s=${currentSeason}&e=${currentEpisode}`,
+          priority: 7
+        });
+        sources.push({
+          name: '🍿 2Embed',
+          url: `https://www.2embed.ru/embed/tmdb/tv?id=${tmdbId}&s=${currentSeason}&e=${currentEpisode}`,
+          priority: 8
+        });
+        sources.push({
+          name: '⌚ xpWatch',
+          url: `https://xpwatch-v2.pages.dev/tv/${tmdbId}`,
+          priority: 9
+        });
+        sources.push({
+          name: '🥦 BrocoFlix',
+          url: `https://brocoflix.xyz/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+          priority: 10
+        });
+        sources.push({
+          name: '🧲 WebTorrent',
+          url: `https://webtorrent.io/desktop/`,
+          priority: 11
+        });
       }
     } else {
       // Movies sources
@@ -202,6 +227,31 @@ const Details = () => {
           name: '⚡ SmashyStream',
           url: `https://embed.smashystream.com/play1.php?tmdb=${tmdbId}`,
           priority: 6
+        });
+        sources.push({
+          name: '🔥 SuperEmbed',
+          url: `https://superembed.stream/se_player.php?video_id=${tmdbId}&tmdb=1`,
+          priority: 7
+        });
+        sources.push({
+          name: '🍿 2Embed',
+          url: `https://www.2embed.ru/embed/tmdb/movie?id=${tmdbId}`,
+          priority: 8
+        });
+        sources.push({
+          name: '⌚ xpWatch',
+          url: `https://xpwatch-v2.pages.dev/movie/${tmdbId}`,
+          priority: 9
+        });
+        sources.push({
+          name: '🥦 BrocoFlix',
+          url: `https://brocoflix.xyz/movie/${tmdbId}`,
+          priority: 10
+        });
+        sources.push({
+          name: '🧲 WebTorrent',
+          url: `https://webtorrent.io/desktop/`,
+          priority: 11
         });
       }
     }
