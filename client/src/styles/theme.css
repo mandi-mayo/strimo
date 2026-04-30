@@ -1,0 +1,315 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #121212;
+  --foreground: #ffffff;
+  --card: #1f1f1f;
+  --card-foreground: #ffffff;
+  --primary: #e50914;
+  --primary-foreground: #ffffff;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #ffffff;
+  --muted: #333333;
+  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --accent: #f5f5f5;
+  --accent-foreground: #000000;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: transparent;
+  --ring: rgba(229, 9, 20, 0.5);
+  --radius: 35px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 20px);
+  --radius-md: calc(var(--radius) - 10px);
+  --radius-lg: var(--radius);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Playfair Display', serif;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Video player styles */
+.video-player-wrapper {
+  width: 100%;
+}
+
+.video-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(31, 31, 31, 0.8);
+  border-radius: 15px 15px 0 0;
+  backdrop-filter: blur(10px);
+}
+
+.video-player-select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+}
+
+.video-player-select:focus {
+  outline: none;
+  border-color: #e50914;
+}
+
+.video-player-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 0 0 25px 25px;
+  overflow: hidden;
+  background: #1a1515;
+}
+
+.video-player-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(31, 31, 31, 0.4);
+  border-radius: 25px;
+  text-align: center;
+}
+
+.video-player-error h3 {
+  margin: 0.5rem 0 0.25rem;
+  color: white;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #e50914;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Season/Episode picker */
+.season-select {
+  background: rgba(31, 31, 31, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-family: 'Playfair Display', serif;
+  cursor: pointer;
+}
+
+.season-select:focus {
+  outline: none;
+  border-color: #e50914;
+}
+
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.episode-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(31, 31, 31, 0.4);
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.episode-card:hover {
+  background: rgba(31, 31, 31, 0.7);
+  transform: translateY(-2px);
+}
+
+.episode-card.active {
+  border-color: #e50914;
+  background: rgba(229, 9, 20, 0.15);
+}
+
+.episode-thumb {
+  width: 120px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.episode-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.ep-number {
+  font-size: 0.75rem;
+  color: #e50914;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ep-title {
+  font-size: 0.9rem;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ep-meta {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Cast grid */
+.cast-grid {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.cast-grid::-webkit-scrollbar { display: none; }
+
+.cast-card {
+  flex: 0 0 100px;
+  text-align: center;
+}
+
+.cast-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 0.5rem;
+  background: rgba(31, 31, 31, 0.5);
+}
+
+.cast-name {
+  font-size: 0.8rem;
+  color: white;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cast-character {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rating badges */
+.ratings-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background: rgba(31, 31, 31, 0.6);
+}
+
+.rating-badge .label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+}
+
+.rating-badge .value {
+  color: white;
+  font-weight: 600;
+}
+
+.rating-badge.imdb { background: rgba(245, 197, 24, 0.15); }
+.rating-badge.imdb .value { color: #f5c518; }
+.rating-badge.rt { background: rgba(255, 80, 80, 0.15); }
+.rating-badge.mc { background: rgba(102, 204, 51, 0.15); }
+
+/* Tags */
+.tags-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  background: rgba(31, 31, 31, 0.5);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tag.accent {
+  background: rgba(229, 9, 20, 0.2);
+  color: #e50914;
+  border-color: rgba(229, 9, 20, 0.3);
+  font-weight: 600;
+}

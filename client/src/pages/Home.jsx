@@ -1,113 +1,204 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { Play, Star, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import axios from 'axios';
-import { Play, Info } from 'lucide-react';
-import MediaRow from '../components/MediaRow';
-import SkeletonLoader from '../components/SkeletonLoader';
+import ImageWithFallback from '../components/ImageWithFallback.jsx';
 
-const API = (import.meta.env.VITE_API_URL || 'https://strimo-b8v4.onrender.com') + '/api';
+const API = '/api';
 
-const Home = () => {
-  const [hero, setHero] = useState(null);
+export default function Home() {
   const [trending, setTrending] = useState([]);
-  const [anime, setAnime] = useState([]);
+  const [loadingTrending, setLoadingTrending] = useState(true);
+  const [watchHistory, setWatchHistory] = useState([]);
 
-  const [loadingHero, setLoadingHero] = useState(true);
-  const [loadingAnime, setLoadingAnime] = useState(true);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: false, 
+    align: 'center',
+    containScroll: false, // Ensures the first and last cards are actually centered, creating the 3D effect immediately
+    dragFree: false
+  });
+
+  const hasCentered = useRef(false);
+
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
 
   useEffect(() => {
-    // Fetch essential sections only
-    axios.get(`${API}/trending`)
-      .then(r => {
-        setTrending(r.data);
-        if (r.data.length > 0) {
-          const heroIdx = Math.floor(Math.random() * Math.min(5, r.data.length));
-          setHero(r.data[heroIdx]);
-        }
-      })
-      .catch((err) => {
-        console.error("Trending fetch error:", err.message);
-      })
-      .finally(() => setLoadingHero(false));
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+  }, [emblaApi, onSelect]);
 
-    axios.get(`${API}/anime/trending`)
-      .then(r => {
-        console.log("Anime trending response:", r.data);
-        setAnime(r.data || []);
-      })
-      .catch((err) => {
-        console.error("Anime trending fetch error:", err.message);
-        setAnime([]);
-      })
-      .finally(() => setLoadingAnime(false));
+  // Instantly jump to the center card on initial load
+  useEffect(() => {
+    if (!emblaApi || trending.length === 0 || hasCentered.current) return;
+    
+    const middleIndex = Math.floor(trending.length / 2);
+    emblaApi.scrollTo(middleIndex, true); // true = instant jump (no animation)
+    hasCentered.current = true;
+  }, [emblaApi, trending.length]);
+
+
+
+  useEffect(() => {
+    // Load watch history from local storage
+    try {
+      const storedHistory = localStorage.getItem('strimo_watch_history');
+      if (storedHistory) {
+        setWatchHistory(JSON.parse(storedHistory));
+      }
+    } catch (e) {
+      console.error("Failed to load watch history", e);
+    }
+
+    axios.get(`${API}/trending`)
+      .then(r => setTrending(r.data || []))
+      .catch(err => console.error('Trending fetch error:', err.message))
+      .finally(() => setLoadingTrending(false));
   }, []);
 
+  const buildLink = (item) => {
+    if (item.type === 'anime') {
+      return `/details/anime-${item.mal_id}?type=anime&mal=${item.mal_id}`;
+    }
+    return `/details/${item.id}?type=${item.type}${item.imdb_id ? '&imdb=' + item.imdb_id : ''}&source=${item.source || 'tmdb'}`;
+  };
+
   return (
-    <div style={{ paddingTop: 0 }}>
-      {/* Hero */}
-      {loadingHero ? (
-        <SkeletonLoader type="hero" />
-      ) : hero ? (
-        <section className="hero">
-          <div
-            className="hero-bg"
-            style={{ backgroundImage: `url(${hero.backdrop || hero.image})` }}
-          />
-          <div className="hero-gradient" />
-          <div className="hero-content">
-            <div className="hero-badge">
-              Trending Now
-            </div>
-            <h1 className="hero-title">{hero.title}</h1>
-            <div className="hero-meta">
-              {hero.rating && (
-                <span className="hero-meta-item rating">
-                  {hero.rating}
-                </span>
-              )}
-              <span className="hero-meta-item">{hero.year}</span>
-              <span className="hero-meta-item" style={{ textTransform: 'capitalize' }}>
-                {hero.type === 'series' ? 'TV Series' : hero.type}
-              </span>
-            </div>
-            <p className="hero-desc">{hero.description}</p>
-            <div className="hero-actions">
-              <Link
-                to={`/details/${hero.id}?type=${hero.type}${hero.imdb_id ? '&imdb=' + hero.imdb_id : ''}&source=${hero.source || 'tmdb'}`}
-                className="btn btn-primary"
-              >
-                <Play fill="white" size={18} /> Watch Now
-              </Link>
-              <Link
-                to={`/details/${hero.id}?type=${hero.type}${hero.imdb_id ? '&imdb=' + hero.imdb_id : ''}&source=${hero.source || 'tmdb'}`}
-                className="btn btn-secondary"
-              >
-                <Info size={18} /> More Info
-              </Link>
+    <div className="flex-1 py-8 px-8 lg:px-16 flex flex-col gap-12 overflow-y-auto">
+      {/* Featured OTT Carousel */}
+      {loadingTrending ? (
+        <div className="flex items-center justify-center h-[300px]">
+          <div className="spinner" />
+        </div>
+      ) : trending.length > 0 ? (
+        <div className="relative w-full max-w-[1400px] mx-auto overflow-hidden py-10 px-4 sm:px-10">
+          <div ref={emblaRef}>
+            <div className="flex touch-pan-y items-center h-[350px] sm:h-[450px]">
+              {trending.map((item, idx) => {
+                const diff = Math.abs(idx - selectedIndex);
+                const isCenter = diff === 0;
+                
+                // Coverflow math
+                const scale = isCenter ? 1 : diff === 1 ? 0.85 : diff === 2 ? 0.7 : 0.55;
+                const zIndex = 50 - diff * 10;
+                
+                return (
+                  <div 
+                    key={`${item.id}-${idx}`} 
+                    className="flex-[0_0_auto] w-[260px] sm:w-[320px] transition-all duration-500 ease-out cursor-pointer -mx-10 sm:-mx-16"
+                    style={{ 
+                      transform: `scale(${scale})`,
+                      zIndex: zIndex,
+                    }}
+                    onMouseEnter={() => {
+                      if (!isCenter && emblaApi) {
+                        emblaApi.scrollTo(idx);
+                      }
+                    }}
+                    onClick={(e) => {
+                      if (!isCenter && emblaApi) {
+                        e.preventDefault();
+                        emblaApi.scrollTo(idx);
+                      }
+                    }}
+                  >
+                    <Link 
+                      to={buildLink(item)} 
+                      className="block relative w-full aspect-[4/5] sm:aspect-[1/1.2] rounded-3xl overflow-hidden bg-[#1f1f1f] shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-white/10 group"
+                    >
+                      <ImageWithFallback
+                        src={item.image || item.backdrop}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      
+                      {/* Dark bottom block matching image structure */}
+                      <div className="absolute bottom-0 left-0 right-0 h-[35%] bg-gradient-to-t from-[#000] via-[#000]/80 to-transparent flex flex-col justify-end p-4 sm:p-6 pb-5 backdrop-blur-sm">
+                        <h3 className="text-white font-bold text-lg sm:text-xl text-center leading-tight truncate w-full drop-shadow-md transition-colors group-hover:text-[#e50914]">
+                          {item.title}
+                        </h3>
+                        <p className="text-white/60 text-xs sm:text-sm text-center mt-1 font-medium tracking-wide uppercase">
+                          {item.year ? `${item.type} • ${item.year}` : item.type}
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </section>
+
+          {/* Navigation Arrows */}
+          <button
+            onClick={() => emblaApi?.scrollPrev()}
+            className="absolute left-4 sm:left-10 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md rounded-full flex items-center justify-center transition-all z-[60] group/btn"
+          >
+            <ChevronLeft size={24} className="text-white group-hover/btn:scale-110 transition-transform" />
+          </button>
+          <button
+            onClick={() => emblaApi?.scrollNext()}
+            className="absolute right-4 sm:right-10 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md rounded-full flex items-center justify-center transition-all z-[60] group/btn"
+          >
+            <ChevronRight size={24} className="text-white group-hover/btn:scale-110 transition-transform" />
+          </button>
+        </div>
       ) : null}
 
-      {/* Content Rows */}
-      <MediaRow
-        title="Trending This Week"
-        items={trending}
-        loading={loadingHero}
-        showType={true}
-      />
+      {/* Continue Watching */}
+      {watchHistory.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <h3 className="text-2xl sm:text-[30px] text-white tracking-wide flex items-center gap-2">
+            <Clock size={28} className="text-[#e50914]" />
+            Continue Watching
+          </h3>
+          <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
+            {watchHistory.map((item, idx) => (
+              <Link
+                key={`${item.id}-${idx}`}
+                to={item.link}
+                className="flex-none w-[220px] sm:w-[260px] bg-[#1f1f1f] rounded-[25px] overflow-hidden snap-start relative group"
+              >
+                <div className="h-[140px] sm:h-[150px] relative">
+                  <ImageWithFallback
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                    <Play className="text-white fill-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" size={40} />
+                  </div>
+                  {/* Progress Bar */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
+                    <div 
+                      className="h-full bg-[#e50914]" 
+                      style={{ width: `${item.progress || 35}%` }} 
+                    />
+                  </div>
+                </div>
+                <div className="p-4 bg-[#1f1f1f]">
+                  <p className="text-white font-semibold text-sm leading-tight truncate">{item.title}</p>
+                  <p className="text-white/50 text-xs mt-1">Resume {item.type === 'series' ? 'Episode' : 'Movie'}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <MediaRow
-        title="Trending Anime"
-        items={anime}
-        loading={loadingAnime}
-      />
+      {/* Empty State for Continue Watching if needed, but requirements say hide OR show "No recently watched". 
+          Hiding is cleaner, so we only render if length > 0. */}
 
-      <footer className="footer">
-        <p>NetFricks — Powered by TMDB, TVMaze, Jikan & OMDb</p>
+      {/* Footer */}
+      <footer className="text-center py-8 text-white/30 text-sm border-t border-white/5 mt-auto">
+        <p>Strimo — Powered by TMDB, TVMaze, Jikan & OMDb</p>
       </footer>
     </div>
   );
-};
-
-export default Home;
+}

@@ -57,7 +57,7 @@ function formatAnime(item) {
 // TMDB ENDPOINTS
 // ============================================================
 
-// 1. Trending (movies + TV combined, weekly)
+// 1. Trending/Latest (Interleaved Now Playing & Airing Today)
 app.get('/api/trending', async (req, res) => {
     try {
         if (!TMDB_KEY) {
@@ -79,15 +79,26 @@ app.get('/api/trending', async (req, res) => {
             return res.json(results);
         }
 
-        const response = await axios.get(`${TMDB_BASE}/trending/all/week?api_key=${TMDB_KEY}&language=en-US&page=1`);
-        const results = response.data.results
-            .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-            .slice(0, 20)
-            .map(item => formatTMDB(item));
-        res.json(results);
+        // Fetch Now Playing Movies and On The Air TV Shows for a "Latest" feel
+        const [moviesRes, tvRes] = await Promise.all([
+            axios.get(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_KEY}&language=en-US&page=1`),
+            axios.get(`${TMDB_BASE}/tv/on_the_air?api_key=${TMDB_KEY}&language=en-US&page=1`)
+        ]);
+
+        const movies = (moviesRes.data.results || []).map(item => formatTMDB(item, 'movie'));
+        const tv = (tvRes.data.results || []).map(item => formatTMDB(item, 'series'));
+
+        // Interleave movies and TV shows for a diverse carousel
+        const combined = [];
+        const max = Math.max(movies.length, tv.length);
+        for (let i = 0; i < max; i++) {
+            if (movies[i]) combined.push(movies[i]);
+            if (tv[i]) combined.push(tv[i]);
+        }
+
+        res.json(combined.slice(0, 20));
     } catch (error) {
-        console.error("❌ Error fetching trending:", error.response?.status || error.message);
-        if (error.response?.data) console.error("   Details:", error.response.data);
+        console.error("❌ Error fetching trending/latest:", error.response?.status || error.message);
         res.status(500).json({ error: 'Failed to fetch trending content' });
     }
 });
@@ -462,7 +473,7 @@ app.get('/api/season/:showId/:seasonNum', async (req, res) => {
 app.get('/api/anime/trending', async (req, res) => {
     try {
         const response = await axios.get(`${JIKAN_BASE}/top/anime?filter=airing&limit=20`);
-        const results = response.data.data.map(formatAnime);
+        const results = (response.data?.data || []).map(formatAnime);
         res.json(results);
     } catch (error) {
         console.error("Error fetching trending anime:", error.message);
@@ -474,7 +485,7 @@ app.get('/api/anime/trending', async (req, res) => {
 app.get('/api/anime/popular', async (req, res) => {
     try {
         const response = await axios.get(`${JIKAN_BASE}/top/anime?filter=bypopularity&limit=20`);
-        const results = response.data.data.map(formatAnime);
+        const results = (response.data?.data || []).map(formatAnime);
         res.json(results);
     } catch (error) {
         console.error("Error fetching popular anime:", error.message);
@@ -488,7 +499,7 @@ app.get('/api/anime/search', async (req, res) => {
     if (!q) return res.json([]);
     try {
         const response = await axios.get(`${JIKAN_BASE}/anime?q=${encodeURIComponent(q)}&limit=20`);
-        const results = response.data.data.map(formatAnime);
+        const results = (response.data?.data || []).map(formatAnime);
         res.json(results);
     } catch (error) {
         console.error("Error searching anime:", error.message);

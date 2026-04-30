@@ -1,0 +1,170 @@
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search as SearchIcon, Play, Star, X } from 'lucide-react';
+import axios from 'axios';
+import ImageWithFallback from './ImageWithFallback.jsx';
+
+const API = '/api';
+
+export default function SearchModal({ isOpen, onClose }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [animeResults, setAnimeResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Debounce hook
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Handle escape key to close
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
+      // Clear search when closed
+      setQuery('');
+      setResults([]);
+      setAnimeResults([]);
+    }
+  }, [isOpen]);
+
+  // Search when query changes
+  useEffect(() => {
+    if (!debouncedQuery) {
+      setResults([]);
+      setAnimeResults([]);
+      return;
+    }
+
+    setIsLoading(true);
+
+    Promise.all([
+      axios.get(`${API}/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
+      axios.get(`${API}/anime/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
+    ]).then(([mainRes, animeRes]) => {
+      setResults(mainRes.data || []);
+      setAnimeResults(animeRes.data || []);
+    }).finally(() => setIsLoading(false));
+  }, [debouncedQuery]);
+
+  if (!isOpen) return null;
+
+  const buildLink = (item) => {
+    if (item.type === 'anime') {
+      return `/details/anime-${item.mal_id}?type=anime&mal=${item.mal_id}`;
+    }
+    return `/details/${item.id}?type=${item.type}${item.imdb_id ? '&imdb=' + item.imdb_id : ''}&source=${item.source || 'tmdb'}`;
+  };
+
+  const handleResultClick = (item) => {
+    onClose();
+    navigate(buildLink(item));
+  };
+
+  const allResults = [...results, ...animeResults];
+
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#0f0f0f]/95 backdrop-blur-md animate-in fade-in duration-200">
+      {/* Background click area to close */}
+      <div className="absolute inset-0 z-0" onClick={onClose} />
+
+      {/* Close Button */}
+      <button 
+        onClick={onClose}
+        className="absolute top-6 right-6 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white/80 hover:text-white transition-colors z-10"
+      >
+        <X size={28} />
+      </button>
+
+      {/* Search Bar Container */}
+      <div className="w-full max-w-4xl relative z-10 animate-in slide-in-from-top-10 duration-300">
+        <div className="bg-[#f5f5f5] h-[70px] rounded-[35px] flex items-center px-8 relative overflow-hidden focus-within:ring-2 ring-[#e50914]/50 transition-all shadow-2xl">
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search movies, TV shows, anime..."
+            className="w-full bg-transparent border-none outline-none text-black text-xl placeholder:text-black/40"
+            style={{ fontFamily: '"Playfair Display", serif' }}
+          />
+          {query && (
+            <button 
+              onClick={() => setQuery('')} 
+              className="text-black/40 hover:text-black mr-2 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          )}
+          <SearchIcon className="text-[#e50914] shrink-0" size={30} strokeWidth={2.5} />
+        </div>
+      </div>
+
+      {/* Results Area */}
+      <div className="w-full max-w-6xl mt-8 flex-1 overflow-y-auto z-10 pb-20 hide-scrollbar px-2">
+        {isLoading ? (
+          <div className="flex items-center justify-center p-16">
+            <div className="spinner" />
+          </div>
+        ) : allResults.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 pb-8 animate-in fade-in duration-300">
+            {allResults.filter(i => i.image).map((item, idx) => (
+              <div 
+                key={`${item.id}-${idx}`}
+                onClick={() => handleResultClick(item)}
+                className="aspect-[3/4] bg-[#1f1f1f] rounded-[25px] overflow-hidden relative group cursor-pointer"
+              >
+                <ImageWithFallback
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
+                  <Play className="text-white fill-white self-center mb-auto mt-auto drop-shadow-lg" size={44} />
+                  <p className="text-white font-bold text-sm leading-tight text-center mb-1">{item.title}</p>
+                  <div className="flex items-center justify-center gap-2">
+                    {item.rating && (
+                      <span className="text-[#f5c518] text-xs flex items-center gap-0.5">
+                        <Star size={10} fill="#f5c518" stroke="#f5c518" />
+                        {item.rating}
+                      </span>
+                    )}
+                    <span className="text-white/50 text-xs">{item.year}</span>
+                    <span className="text-white/40 text-[10px] uppercase">
+                      {item.type === 'series' ? 'TV' : item.type}
+                    </span>
+                  </div>
+                </div>
+                {/* Always-visible title strip at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 group-hover:opacity-0 transition-opacity">
+                  <p className="text-white text-xs font-medium truncate">{item.title}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : query ? (
+          <div className="flex flex-col items-center justify-center py-20 text-white/40">
+            <h3 className="text-xl mb-2 text-white/60">No results found</h3>
+            <p>We couldn't find anything for "{query}".</p>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}

@@ -1,21 +1,17 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Search from './pages/Search';
-import Details from './pages/Details';
-import ErrorBoundary from './components/ErrorBoundary';
+import Layout from './components/Layout.jsx';
+import Home from './pages/Home.jsx';
+import Details from './pages/Details.jsx';
 
 function App() {
   return (
     <Router>
-      <Navbar />
-      <ErrorBoundary>
-        <Routes>
+      <Routes>
+        <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/search" element={<Search />} />
           <Route path="/details/:id" element={<Details />} />
-        </Routes>
-      </ErrorBoundary>
+        </Route>
+      </Routes>
     </Router>
   );
 }
