@@ -547,8 +547,12 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
 // (Removed unused /api/get-imdb endpoint - IMDb IDs available in main data)
 
-app.listen(PORT, () => {
-    console.log(`🎬 NetFricks server running on port ${PORT}`);
-    console.log(`   OMDB API: ${OMDB_KEY ? '✅ Connected' : '❌ No key (ratings unavailable)'}`);
-    console.log(`   Jikan API: ✅ Connected (no key needed)`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`🎬 NetFricks server running on port ${PORT}`);
+        console.log(`   OMDB API: ${OMDB_KEY ? '✅ Connected' : '❌ No key (ratings unavailable)'}`);
+        console.log(`   Jikan API: ✅ Connected (no key needed)`);
+    });
+}
+
+module.exports = app;
