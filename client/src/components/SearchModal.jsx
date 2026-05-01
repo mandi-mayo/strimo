@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search as SearchIcon, Play, Star, X } from 'lucide-react';
 import api, { API_BASE_URL as API } from '../api';
+import ImageWithFallback from './ImageWithFallback.jsx';
 
 export default function SearchModal({ isOpen, onClose }) {
   const [query, setQuery] = useState('');

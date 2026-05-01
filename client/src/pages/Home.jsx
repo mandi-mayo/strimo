@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Play, Star, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import api, { API_BASE_URL as API } from '../api';
+import ImageWithFallback from '../components/ImageWithFallback.jsx';
 
 export default function Home() {
   const [trending, setTrending] = useState([]);

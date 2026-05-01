@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import api, { API_BASE_URL as API } from '../api';
+import { Play, Star, Clock, Calendar, Award, ChevronDown } from 'lucide-react';
+import ImageWithFallback from '../components/ImageWithFallback.jsx';
+import VideoPlayer from '../components/VideoPlayer.jsx';
 
 export default function Details() {
   const { id } = useParams();
