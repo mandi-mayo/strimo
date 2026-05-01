@@ -7,7 +7,7 @@ export default function Layout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#121212] text-white overflow-x-hidden" style={{ fontFamily: '"Playfair Display", serif' }}>
+    <div className="flex min-h-screen bg-[#292323] text-white overflow-x-hidden" style={{ fontFamily: 'Poppins, sans-serif' }}>
       <Sidebar onOpenSearch={() => setIsSearchOpen(true)} />
       <main className="flex-1 flex flex-col min-w-0 relative">
         <Outlet />

@@ -78,7 +78,7 @@ export default function SearchModal({ isOpen, onClose }) {
   const allResults = [...results, ...animeResults];
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#0f0f0f]/95 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#1a1515]/95 backdrop-blur-md animate-in fade-in duration-200">
       {/* Background click area to close */}
       <div className="absolute inset-0 z-0" onClick={onClose} />
 
@@ -92,25 +92,25 @@ export default function SearchModal({ isOpen, onClose }) {
 
       {/* Search Bar Container */}
       <div className="w-full max-w-4xl relative z-10 animate-in slide-in-from-top-10 duration-300">
-        <div className="bg-[#f5f5f5] h-[70px] rounded-[35px] flex items-center px-8 relative overflow-hidden focus-within:ring-2 ring-[#e50914]/50 transition-all shadow-2xl">
+        <div className="bg-[#292323] border border-white/10 h-[70px] rounded-[35px] flex items-center px-8 relative overflow-hidden focus-within:ring-2 ring-[#850203]/50 transition-all shadow-2xl">
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search movies, TV shows, anime..."
-            className="w-full bg-transparent border-none outline-none text-black text-xl placeholder:text-black/40"
-            style={{ fontFamily: '"Playfair Display", serif' }}
+            className="w-full bg-transparent border-none outline-none text-white text-xl placeholder:text-white/30"
+            style={{ fontFamily: 'Poppins, sans-serif' }}
           />
           {query && (
             <button 
               onClick={() => setQuery('')} 
-              className="text-black/40 hover:text-black mr-2 transition-colors"
+              className="text-white/30 hover:text-white mr-4 transition-colors"
             >
               <X size={20} />
             </button>
           )}
-          <SearchIcon className="text-[#e50914] shrink-0" size={30} strokeWidth={2.5} />
+          <SearchIcon className="text-[#850203] shrink-0" size={28} strokeWidth={2} />
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export default function SearchModal({ isOpen, onClose }) {
               <div 
                 key={`${item.id}-${idx}`}
                 onClick={() => handleResultClick(item)}
-                className="aspect-[3/4] bg-[#1f1f1f] rounded-[25px] overflow-hidden relative group cursor-pointer"
+                className="aspect-[3/4] bg-[#1a1515] rounded-[25px] overflow-hidden relative group cursor-pointer border border-white/5"
               >
                 <ImageWithFallback
                   src={item.image}
@@ -135,12 +135,12 @@ export default function SearchModal({ isOpen, onClose }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
                   <Play className="text-white fill-white self-center mb-auto mt-auto drop-shadow-lg" size={44} />
-                  <p className="text-white font-bold text-sm leading-tight text-center mb-1">{item.title}</p>
+                  <p className="text-white font-semibold text-sm leading-tight text-center mb-1">{item.title}</p>
                   <div className="flex items-center justify-center gap-2">
                     {item.rating && (
                       <span className="text-[#f5c518] text-xs flex items-center gap-0.5">
                         <Star size={10} fill="#f5c518" stroke="#f5c518" />
-                        {item.rating}
+                        <span className="font-semibold">{item.rating}</span>
                       </span>
                     )}
                     <span className="text-white/50 text-xs">{item.year}</span>

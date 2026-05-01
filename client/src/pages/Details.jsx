@@ -234,7 +234,7 @@ export default function Details() {
             {type === 'series' && details.seasons && details.seasons.length > 0 && (
               <div className="relative">
                 <select
-                  className="appearance-none bg-[#1f1f1f] border border-white/10 text-white px-4 py-2.5 pr-10 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#e50914] cursor-pointer"
+                  className="appearance-none bg-[#1a1515] border border-white/10 text-white px-4 py-2.5 pr-10 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#850203] cursor-pointer"
                   value={currentSeason}
                   onChange={(e) => setCurrentSeason(Number(e.target.value))}
                 >
@@ -252,7 +252,7 @@ export default function Details() {
             {list.length > 0 && (
               <div className="relative">
                 <select
-                  className="appearance-none bg-[#1f1f1f] border border-white/10 text-white px-4 py-2.5 pr-10 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#e50914] cursor-pointer"
+                  className="appearance-none bg-[#1a1515] border border-white/10 text-white px-4 py-2.5 pr-10 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#850203] cursor-pointer"
                   value={currentEpisode}
                   onChange={(e) => {
                     const epNum = Number(e.target.value);
@@ -293,7 +293,7 @@ export default function Details() {
                     key={i}
                     onClick={() => setEpisodePage(i)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                      episodePage === i ? 'bg-[#e50914] text-white' : 'bg-[#1f1f1f] text-white/60 hover:bg-[#5a4e4d]'
+                      episodePage === i ? 'bg-[#850203] text-white' : 'bg-[#1a1515] text-white/60 hover:bg-white/10'
                     }`}
                   >
                     {startEp}-{endEp}
@@ -308,7 +308,7 @@ export default function Details() {
         {episodesLoading ? (
           <div className="flex gap-4 overflow-hidden mt-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex-none w-[260px] h-[150px] bg-[#1f1f1f] rounded-[15px] animate-pulse" />
+              <div key={i} className="flex-none w-[260px] h-[150px] bg-[#1a1515] rounded-[15px] animate-pulse" />
             ))}
           </div>
         ) : (
@@ -326,7 +326,7 @@ export default function Details() {
                     if (player) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }}
                 >
-                  <div className={`relative w-full aspect-video rounded-[15px] overflow-hidden mb-3 border-2 transition-colors ${isActive ? 'border-[#e50914] shadow-[0_0_15px_rgba(187,41,26,0.3)]' : 'border-transparent'}`}>
+                  <div className={`relative w-full aspect-video rounded-[15px] overflow-hidden mb-3 border-2 transition-colors ${isActive ? 'border-[#850203] shadow-[0_0_15px_rgba(133,2,3,0.3)]' : 'border-transparent'}`}>
                     {ep.image ? (
                       <ImageWithFallback src={ep.image} alt={ep.name} className="w-full h-full object-cover bg-[#2a2424]" />
                     ) : (
@@ -336,7 +336,7 @@ export default function Details() {
                     )}
                     
                     <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                      <Play className={`fill-current ${isActive ? 'text-[#e50914]' : 'text-white'} drop-shadow-lg`} size={40} />
+                      <Play className={`fill-current ${isActive ? 'text-[#850203]' : 'text-white'} drop-shadow-lg`} size={40} />
                     </div>
                     
                     {ep.filler && (
@@ -348,10 +348,10 @@ export default function Details() {
                   
                   <div className="px-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`font-bold text-sm ${isActive ? 'text-[#e50914]' : 'text-white/70'}`}>
+                      <span className={`font-semibold text-sm ${isActive ? 'text-[#850203]' : 'text-white/70'}`}>
                         {ep.number}.
                       </span>
-                      <h4 className={`font-bold text-sm truncate ${isActive ? 'text-white' : 'text-white/90'}`} title={ep.name}>
+                      <h4 className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-white/90'}`} title={ep.name}>
                         {ep.name || `Episode ${ep.number}`}
                       </h4>
                     </div>
@@ -372,7 +372,7 @@ export default function Details() {
   return (
     <div className="flex-1 py-8 px-8 lg:px-16 flex flex-col gap-10 overflow-y-auto">
       {/* Top Banner / Movie Info - Dark Poster Background */}
-      <div className="relative w-full bg-[#111] rounded-[30px] min-h-[450px] overflow-hidden flex flex-col lg:flex-row text-white shadow-2xl">
+      <div className="relative w-full bg-[#1a1515] rounded-[30px] min-h-[450px] overflow-hidden flex flex-col lg:flex-row text-white shadow-2xl">
         
         {/* Background Layer with proper scaling */}
         <ImageWithFallback
@@ -387,28 +387,28 @@ export default function Details() {
         <div className="relative flex-1 p-10 lg:p-14 flex flex-col justify-center gap-5 z-10 min-h-[350px]">
           <div>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#e50914] text-white uppercase tracking-wider shadow-sm">
+              <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-[#850203] text-white uppercase tracking-wider shadow-sm">
                 {type === 'series' ? 'TV Series' : type === 'anime' ? 'Anime' : 'Movie'}
               </span>
               {details.status && (
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-white/20 text-white uppercase tracking-wider backdrop-blur-sm border border-white/10">
+                <span className="px-3 py-1 rounded-full text-[10px] font-semibold bg-white/20 text-white uppercase tracking-wider backdrop-blur-sm border border-white/10">
                   {details.status}
                 </span>
               )}
             </div>
             
-            <h1 className="text-3xl lg:text-5xl font-extrabold uppercase tracking-widest leading-tight mb-3 text-white drop-shadow-xl" style={{ fontFamily: 'Playfair Display, serif' }}>
-              {details.title}
-            </h1>
+            <h1 className="text-3xl lg:text-5xl font-semibold uppercase tracking-widest leading-tight mb-3 text-white drop-shadow-xl">
+                          {details.title}
+                        </h1>
             
             {details.tagline && (
-              <p className="text-base italic opacity-80 mb-4 font-serif text-white drop-shadow-md">"{details.tagline}"</p>
+              <p className="text-base italic opacity-80 mb-4 text-white drop-shadow-md">"{details.tagline}"</p>
             )}
 
             {/* Meta info */}
             <div className="flex items-center gap-4 flex-wrap text-sm mb-4 font-medium text-white/90">
               {details.rating && (
-                <span className="flex items-center gap-1.5 text-[#f5c518] font-bold drop-shadow-md">
+                <span className="flex items-center gap-1.5 text-[#f5c518] font-semibold drop-shadow-md">
                   <Star size={16} fill="#f5c518" stroke="#f5c518" />
                   {details.rating}/10
                 </span>
@@ -442,7 +442,7 @@ export default function Details() {
                     const player = document.getElementById('player');
                     if (player) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#e50914] rounded-full text-white text-sm font-bold hover:bg-[#a02316] hover:scale-105 transition-all shadow-[0_0_15px_rgba(187,41,26,0.4)]"
+                  className="flex items-center gap-2 px-6 py-3 bg-[#850203] rounded-full text-white text-sm font-semibold hover:bg-[#5a0102] hover:scale-105 transition-all shadow-[0_0_15px_rgba(133,2,3,0.4)]"
                 >
                   <Play className="fill-current" size={18} />
                   WATCH NOW
@@ -451,7 +451,7 @@ export default function Details() {
               {details.trailer && (
                 <button
                   onClick={() => setShowTrailer(!showTrailer)}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 border border-white/20 rounded-full text-white text-sm font-bold transition-all backdrop-blur-md"
+                  className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-white text-sm font-semibold transition-all backdrop-blur-md"
                 >
                   TRAILER
                 </button>
@@ -461,12 +461,12 @@ export default function Details() {
         </div>
 
         {/* Right Side - Info (Description) */}
-        <div className="relative w-full lg:w-[400px] xl:w-[480px] p-10 lg:p-14 flex flex-col gap-5 z-10 bg-gradient-to-l from-black/60 via-black/30 to-transparent backdrop-blur-sm">
+        <div className="relative w-full lg:w-[400px] xl:w-[480px] p-10 lg:p-14 flex flex-col gap-5 z-10 bg-[#1a1515]/60 border-l border-white/5">
           <div className="flex-1 flex flex-col justify-center">
-            <h3 className="text-xl tracking-widest font-extrabold mb-4 text-white drop-shadow-md" style={{ fontFamily: 'Playfair Display, serif' }}>
+            <h3 className="text-xl tracking-widest font-semibold mb-4 text-white drop-shadow-md">
               Info
             </h3>
-            <p className="text-[14px] opacity-80 leading-relaxed text-white/90 font-serif drop-shadow-md line-clamp-4 sm:line-clamp-5">
+            <p className="text-[14px] opacity-70 leading-relaxed text-white/90 drop-shadow-md line-clamp-4 sm:line-clamp-5">
               {details.description}
             </p>
           </div>
@@ -485,20 +485,20 @@ export default function Details() {
                 <h3 className="text-sm text-white/50 uppercase tracking-widest mb-3 font-semibold">Ratings</h3>
                 <div className="flex gap-3 flex-wrap">
                   {omdb.imdb && (
-                    <div className="flex items-center gap-2 bg-[#1f1f1f] rounded-lg px-3 py-1.5">
-                      <span className="text-[#f5c518] font-bold text-xs uppercase tracking-wide">IMDb</span>
+                    <div className="flex items-center gap-2 bg-[#1a1515] rounded-lg px-3 py-1.5 border border-white/5">
+                      <span className="text-[#f5c518] font-semibold text-xs uppercase tracking-wide">IMDb</span>
                       <span className="text-white font-medium">{omdb.imdb}</span>
                     </div>
                   )}
                   {omdb.rottenTomatoes && (
-                    <div className="flex items-center gap-2 bg-[#1f1f1f] rounded-lg px-3 py-1.5">
-                      <span className="text-red-500 font-bold text-xs uppercase tracking-wide">RT</span>
+                    <div className="flex items-center gap-2 bg-[#1a1515] rounded-lg px-3 py-1.5 border border-white/5">
+                      <span className="text-red-500 font-semibold text-xs uppercase tracking-wide">RT</span>
                       <span className="text-white font-medium">{omdb.rottenTomatoes}</span>
                     </div>
                   )}
                   {omdb.metacritic && omdb.metacritic !== 'N/A' && (
-                    <div className="flex items-center gap-2 bg-[#1f1f1f] rounded-lg px-3 py-1.5">
-                      <span className="text-green-500 font-bold text-xs uppercase tracking-wide">Meta</span>
+                    <div className="flex items-center gap-2 bg-[#1a1515] rounded-lg px-3 py-1.5 border border-white/5">
+                      <span className="text-green-500 font-semibold text-xs uppercase tracking-wide">Meta</span>
                       <span className="text-white font-medium">{omdb.metacritic}</span>
                     </div>
                   )}
@@ -511,7 +511,7 @@ export default function Details() {
               <div className="pt-2 border-t border-white/10">
                 {omdb?.awards && omdb.awards !== 'N/A' && (
                   <p className="text-sm opacity-70 flex gap-2 mb-2">
-                    <Award size={16} className="text-[#e50914]" shrink-0 /> {omdb.awards}
+                    <Award size={16} className="text-[#850203]" shrink-0 /> {omdb.awards}
                   </p>
                 )}
                 {details.studios && details.studios.length > 0 && (
@@ -536,7 +536,7 @@ export default function Details() {
             {/* Episodes below player */}
             {(type === 'series' || type === 'anime') && (
               <div className="mt-8">
-                <h2 className="text-2xl text-white tracking-wide font-bold mb-2">
+                <h2 className="text-2xl text-white tracking-wide font-semibold mb-2">
                   Episodes
                 </h2>
                 {renderEpisodes(type === 'anime' ? allAnimeEpisodes : episodes)}
@@ -548,14 +548,14 @@ export default function Details() {
         {/* Cast */}
         {details.cast && details.cast.length > 0 && (
           <div className="mt-4">
-            <h2 className="text-2xl text-white tracking-wide mb-6 font-bold">Cast</h2>
+            <h2 className="text-2xl text-white tracking-wide mb-6 font-semibold">Cast</h2>
             <div className="cast-grid">
               {details.cast.map((actor, i) => (
                 <div key={i} className="cast-card">
                   {actor.image ? (
                     <img src={actor.image} alt={actor.name} className="cast-img" loading="lazy" />
                   ) : (
-                    <div className="cast-img flex items-center justify-center text-2xl text-white/30 bg-[#1f1f1f]">
+                    <div className="cast-img flex items-center justify-center text-2xl text-white/30 bg-[#1a1515]">
                       {actor.name?.[0]}
                     </div>
                   )}
@@ -580,7 +580,7 @@ export default function Details() {
               />
               <button 
                 onClick={() => setShowTrailer(false)}
-                className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-[#e50914] text-white rounded-full backdrop-blur-md transition-colors"
+                className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-[#850203] text-white rounded-full backdrop-blur-md transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
@@ -592,13 +592,13 @@ export default function Details() {
       {/* Recommendations */}
       {details.recommendations && details.recommendations.length > 0 && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-2xl text-white tracking-wide font-bold">More Like This</h2>
+          <h2 className="text-2xl text-white tracking-wide font-semibold">More Like This</h2>
           <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
             {details.recommendations.filter(i => i.image).map((item) => (
               <Link
                 key={item.id}
                 to={buildLink(item)}
-                className="flex-none w-[200px] sm:w-[240px] h-[140px] sm:h-[160px] bg-[#1f1f1f] rounded-[20px] overflow-hidden snap-start relative group"
+                className="flex-none w-[200px] sm:w-[240px] h-[140px] sm:h-[160px] bg-[#1a1515] rounded-[20px] overflow-hidden snap-start relative group border border-white/5"
               >
                 <ImageWithFallback
                   src={item.image}

@@ -109,7 +109,7 @@ export default function Home() {
                   >
                     <Link 
                       to={buildLink(item)} 
-                      className="block relative w-full aspect-[4/5] sm:aspect-[1/1.2] rounded-3xl overflow-hidden bg-[#1f1f1f] shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-white/10 group"
+                      className="block relative w-full aspect-[4/5] sm:aspect-[1/1.2] rounded-3xl overflow-hidden bg-[#1a1515] shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-white/5 group"
                     >
                       <ImageWithFallback
                         src={item.image || item.backdrop}
@@ -117,9 +117,9 @@ export default function Home() {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                       
-                      {/* Dark bottom block matching image structure */}
-                      <div className="absolute bottom-0 left-0 right-0 h-[35%] bg-gradient-to-t from-[#000] via-[#000]/80 to-transparent flex flex-col justify-end p-4 sm:p-6 pb-5 backdrop-blur-sm">
-                        <h3 className="text-white font-bold text-lg sm:text-xl text-center leading-tight truncate w-full drop-shadow-md transition-colors group-hover:text-[#e50914]">
+                      {/* Gradient overlay for readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 sm:p-6 pb-5">
+                        <h3 className="text-white font-semibold text-lg sm:text-xl text-center leading-tight truncate w-full drop-shadow-md transition-colors group-hover:text-[#850203]">
                           {item.title}
                         </h3>
                         <p className="text-white/60 text-xs sm:text-sm text-center mt-1 font-medium tracking-wide uppercase">
@@ -152,8 +152,8 @@ export default function Home() {
       {/* Continue Watching */}
       {watchHistory.length > 0 && (
         <div className="flex flex-col gap-4">
-          <h3 className="text-2xl sm:text-[30px] text-white tracking-wide flex items-center gap-2">
-            <Clock size={28} className="text-[#e50914]" />
+          <h3 className="text-2xl sm:text-[28px] text-white tracking-wide flex items-center gap-2 font-medium">
+            <Clock size={28} className="text-[#850203]" />
             Continue Watching
           </h3>
           <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
@@ -161,7 +161,7 @@ export default function Home() {
               <Link
                 key={`${item.id}-${idx}`}
                 to={item.link}
-                className="flex-none w-[220px] sm:w-[260px] bg-[#1f1f1f] rounded-[25px] overflow-hidden snap-start relative group"
+                className="flex-none w-[220px] sm:w-[260px] bg-[#1a1515] rounded-[25px] overflow-hidden snap-start relative group border border-white/5"
               >
                 <div className="h-[140px] sm:h-[150px] relative">
                   <ImageWithFallback
@@ -175,12 +175,12 @@ export default function Home() {
                   {/* Progress Bar */}
                   <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
                     <div 
-                      className="h-full bg-[#e50914]" 
+                      className="h-full bg-[#850203]" 
                       style={{ width: `${item.progress || 35}%` }} 
                     />
                   </div>
                 </div>
-                <div className="p-4 bg-[#1f1f1f]">
+                <div className="p-4 bg-[#1a1515]">
                   <p className="text-white font-semibold text-sm leading-tight truncate">{item.title}</p>
                   <p className="text-white/50 text-xs mt-1">Resume {item.type === 'series' ? 'Episode' : 'Movie'}</p>
                 </div>

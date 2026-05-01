@@ -51,7 +51,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', debug = false }) => {
   if (!validSources.length) {
     return (
       <div className="video-player-error">
-        <AlertCircle size={48} className="mb-2 text-[#e50914]" />
+        <AlertCircle size={48} className="mb-2 text-[#850203]" />
         <h3 className="text-white text-lg font-semibold">No Video Sources</h3>
         <p className="text-white/50 text-sm">No valid video sources available for this title.</p>
       </div>
@@ -59,19 +59,19 @@ const VideoPlayer = ({ sources = [], title = 'Video', debug = false }) => {
   }
 
   return (
-    <div className="video-player-wrapper flex flex-col rounded-[25px] overflow-hidden shadow-2xl bg-[#0f0f0f]">
+    <div className="video-player-wrapper flex flex-col rounded-[25px] overflow-hidden shadow-2xl bg-[#1a1515]">
       {/* Server selector */}
       {validSources.length > 1 && (
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 bg-[#1f1f1f]/80 backdrop-blur-xl border-b border-white/5 relative z-20">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 bg-[#292323]/95 backdrop-blur-xl border-b border-white/5 relative z-20">
           <div className="flex items-center gap-2 text-white/70 font-medium">
-            <Server size={18} className="text-[#e50914]" />
+            <Server size={18} className="text-[#850203]" />
             <span className="hidden sm:inline">Server:</span>
           </div>
           
           <div className="relative flex-1 sm:flex-none" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center justify-between w-full sm:w-auto gap-3 px-4 py-2 bg-black/20 hover:bg-black/40 border border-white/10 rounded-xl text-white transition-all duration-300"
+              className="flex items-center justify-between w-full sm:w-auto gap-3 px-4 py-2 bg-black/40 hover:bg-black/60 border border-white/10 rounded-xl text-white transition-all duration-300"
             >
               <span className="font-medium truncate">{currentSource?.name}</span>
               {attemptedSources.includes(currentSourceIndex) && (
@@ -82,7 +82,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', debug = false }) => {
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-64 bg-[#2a2a2a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-64 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="flex flex-col p-1.5 gap-0.5 max-h-[300px] overflow-y-auto hide-scrollbar">
                   {validSources.map((source, idx) => {
                     const isSelected = idx === currentSourceIndex;
@@ -93,7 +93,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', debug = false }) => {
                         onClick={() => handleSourceChange(idx)}
                         className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm text-left transition-colors duration-200 ${
                           isSelected 
-                            ? 'bg-[#e50914] text-white font-medium' 
+                            ? 'bg-[#850203] text-white font-medium' 
                             : 'text-white/80 hover:bg-white/10'
                         }`}
                       >
@@ -116,9 +116,9 @@ const VideoPlayer = ({ sources = [], title = 'Video', debug = false }) => {
       )}
 
       {/* Player container */}
-      <div className="w-full aspect-video relative overflow-hidden bg-[#0f0f0f] z-10">
+      <div className="w-full aspect-video relative overflow-hidden bg-[#1a1515] z-10">
         {isLoading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0f0f0f] gap-4">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#1a1515] gap-4">
             <div className="spinner" />
             <p className="text-white/40 text-sm animate-pulse">Connecting to {currentSource?.name}...</p>
           </div>
