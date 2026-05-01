@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search as SearchIcon, Play, Star, X } from 'lucide-react';
-import axios from 'axios';
-import ImageWithFallback from './ImageWithFallback.jsx';
-
-const API = '/api';
+import api, { API_BASE_URL as API } from '../api';
 
 export default function SearchModal({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
@@ -55,8 +52,8 @@ export default function SearchModal({ isOpen, onClose }) {
     setIsLoading(true);
 
     Promise.all([
-      axios.get(`${API}/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
-      axios.get(`${API}/anime/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
+      api.get(`/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
+      api.get(`/anime/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
     ]).then(([mainRes, animeRes]) => {
       setResults(mainRes.data || []);
       setAnimeResults(animeRes.data || []);

@@ -1,11 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { Play, Star, Clock, Calendar, Award, ChevronDown } from 'lucide-react';
-import ImageWithFallback from '../components/ImageWithFallback.jsx';
-import VideoPlayer from '../components/VideoPlayer.jsx';
-
-const API = '/api';
+import api, { API_BASE_URL as API } from '../api';
 
 export default function Details() {
   const { id } = useParams();
@@ -34,11 +29,11 @@ export default function Details() {
       try {
         let data;
         if (type === 'anime' && malParam) {
-          const res = await axios.get(`${API}/anime/details/${malParam}`);
+          const res = await api.get(`/anime/details/${malParam}`);
           data = res.data;
         } else {
-          const url = `${API}/details/${id}?type=${type}${imdbParam ? '&imdb=' + imdbParam : ''}&source=${source}`;
-          const res = await axios.get(url);
+          const url = `/details/${id}?type=${type}${imdbParam ? '&imdb=' + imdbParam : ''}&source=${source}`;
+          const res = await api.get(url);
           data = res.data;
         }
         setDetails(data);
@@ -64,7 +59,7 @@ export default function Details() {
   useEffect(() => {
     if (!details || type === 'anime' || !details.seasons || details.source !== 'tmdb') return;
     setEpisodesLoading(true);
-    axios.get(`${API}/season/${details.tmdb_id || details.id}/${currentSeason}`)
+    api.get(`/season/${details.tmdb_id || details.id}/${currentSeason}`)
       .then(r => {
         setEpisodes(r.data);
         if (r.data.length > 0) {

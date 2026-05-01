@@ -2,10 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Star, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
-import axios from 'axios';
-import ImageWithFallback from '../components/ImageWithFallback.jsx';
-
-const API = '/api';
+import api, { API_BASE_URL as API } from '../api';
 
 export default function Home() {
   const [trending, setTrending] = useState([]);
@@ -57,7 +54,7 @@ export default function Home() {
       console.error("Failed to load watch history", e);
     }
 
-    axios.get(`${API}/trending`)
+    api.get(`/trending`)
       .then(r => setTrending(r.data || []))
       .catch(err => console.error('Trending fetch error:', err.message))
       .finally(() => setLoadingTrending(false));
