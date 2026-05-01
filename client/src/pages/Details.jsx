@@ -29,10 +29,10 @@ export default function Details() {
       try {
         let data;
         if (type === 'anime' && malParam) {
-          const res = await api.get(`/anime/details/${malParam}`);
+          const res = await api.get(`anime/details/${malParam}`);
           data = res.data;
         } else {
-          const url = `/details/${id}?type=${type}${imdbParam ? '&imdb=' + imdbParam : ''}&source=${source}`;
+          const url = `details/${id}?type=${type}${imdbParam ? '&imdb=' + imdbParam : ''}&source=${source}`;
           const res = await api.get(url);
           data = res.data;
         }
@@ -59,7 +59,7 @@ export default function Details() {
   useEffect(() => {
     if (!details || type === 'anime' || !details.seasons || details.source !== 'tmdb') return;
     setEpisodesLoading(true);
-    api.get(`/season/${details.tmdb_id || details.id}/${currentSeason}`)
+    api.get(`season/${details.tmdb_id || details.id}/${currentSeason}`)
       .then(r => {
         setEpisodes(r.data);
         if (r.data.length > 0) {

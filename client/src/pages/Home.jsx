@@ -54,7 +54,7 @@ export default function Home() {
       console.error("Failed to load watch history", e);
     }
 
-    api.get(`/trending`)
+    api.get(`trending`)
       .then(r => setTrending(r.data || []))
       .catch(err => console.error('Trending fetch error:', err.message))
       .finally(() => setLoadingTrending(false));

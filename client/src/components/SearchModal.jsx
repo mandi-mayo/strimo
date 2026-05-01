@@ -52,8 +52,8 @@ export default function SearchModal({ isOpen, onClose }) {
     setIsLoading(true);
 
     Promise.all([
-      api.get(`/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
-      api.get(`/anime/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
+      api.get(`search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
+      api.get(`anime/search?q=${encodeURIComponent(debouncedQuery)}`).catch(() => ({ data: [] })),
     ]).then(([mainRes, animeRes]) => {
       setResults(mainRes.data || []);
       setAnimeResults(animeRes.data || []);
