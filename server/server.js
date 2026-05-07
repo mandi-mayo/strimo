@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Bypass SSL certificate errors for third-party providers (VidLink, etc.)
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+const https = require('https');
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+
 // Subtitle Proxy to handle CORS
 app.get('/api/proxy/subtitle', async (req, res) => {
     const { url } = req.query;
@@ -41,7 +46,7 @@ app.get('/api/resolve/vidlink', async (req, res) => {
             url += `/${season || 1}/${episode || 1}`;
         }
 
-        const response = await axios.get(url);
+        const response = await axios.get(url, { httpsAgent });
         // VidLink returns streams and subtitles
         res.json(response.data);
     } catch (error) {

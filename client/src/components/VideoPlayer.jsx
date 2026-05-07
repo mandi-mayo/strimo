@@ -199,7 +199,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
                 title={`${title} - ${currentSource.name}`}
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                sandbox="allow-forms allow-scripts allow-same-origin allow-presentation allow-pointer-lock allow-top-navigation-by-user-activation"
+                sandbox="allow-forms allow-scripts allow-same-origin allow-presentation allow-pointer-lock allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals"
                 onLoad={handleIframeLoad}
                 onError={handleIframeError}
                 className="w-full h-full border-none pointer-events-auto"
