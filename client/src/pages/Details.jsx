@@ -89,7 +89,7 @@ export default function Details() {
       const historyStr = localStorage.getItem('strimo_watch_history');
       let history = historyStr ? JSON.parse(historyStr) : [];
       
-      const newItemId = details.id || details.mal_id;
+      const newItemId = String(details.id || details.mal_id);
       const newItem = {
         id: newItemId,
         title: details.title,
@@ -99,8 +99,8 @@ export default function Details() {
         progress: Math.floor(Math.random() * 60) + 10 // Fake progress between 10% and 70% for UI
       };
 
-      // Remove existing entry for the same media
-      history = history.filter(item => item.id !== newItemId);
+      // Remove existing entry for the same media (check both ID and title to be safe)
+      history = history.filter(item => item.id !== newItemId && item.title !== details.title);
       
       // Add to beginning
       history.unshift(newItem);
@@ -227,57 +227,58 @@ export default function Details() {
 
   const renderEpisodes = (list) => {
     return (
-      <div className="flex flex-col gap-4 mt-2">
+      <div className="flex flex-col gap-4 mt-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Season Dropdown */}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Season Selector */}
             {type === 'series' && details.seasons && details.seasons.length > 0 && (
-              <div className="relative">
-                <select
-                  className="appearance-none bg-[#1a1515] border border-white/10 text-white px-4 py-2.5 pr-10 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#850203] cursor-pointer"
-                  value={currentSeason}
-                  onChange={(e) => setCurrentSeason(Number(e.target.value))}
-                >
-                  {details.seasons.map(s => (
-                    <option key={s.season_number} value={s.season_number}>
-                      Season {s.season_number}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none" />
+              <div className="relative group/select">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1515] border border-white/10 rounded-xl text-sm font-semibold text-white/90 hover:border-[#850203]/50 transition-all cursor-pointer">
+                  <span>Season {currentSeason}</span>
+                  <ChevronDown size={14} className="text-white/40 group-hover/select:text-[#850203] transition-colors" />
+                </div>
+                <div className="absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 invisible group-hover/select:opacity-100 group-hover/select:visible transition-all z-[60] py-1.5">
+                   <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
+                    {details.seasons.map(s => (
+                      <button
+                        key={s.season_number}
+                        onClick={() => setCurrentSeason(s.season_number)}
+                        className={`w-full px-4 py-2 text-left text-sm transition-colors ${currentSeason === s.season_number ? 'bg-[#850203] text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                      >
+                        Season {s.season_number}
+                      </button>
+                    ))}
+                   </div>
+                </div>
               </div>
             )}
 
-            {/* Episode Dropdown */}
+            {/* Episode Selector */}
             {list.length > 0 && (
-              <div className="relative">
-                <select
-                  className="appearance-none bg-[#1a1515] border border-white/10 text-white px-4 py-2.5 pr-10 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#850203] cursor-pointer"
-                  value={currentEpisode}
-                  onChange={(e) => {
-                    const epNum = Number(e.target.value);
-                    setCurrentEpisode(epNum);
-                    
-                    if (type === 'anime') {
-                      const newPage = Math.floor((epNum - 1) / CHUNK_SIZE);
-                      if (newPage !== episodePage) setEpisodePage(newPage);
-                    }
-                    
-                    setTimeout(() => {
-                      const epCard = document.getElementById(`ep-card-${epNum}`);
-                      if (epCard) epCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                      const player = document.getElementById('player');
-                      if (player) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
-                  }}
-                >
-                  {list.map(ep => (
-                    <option key={ep.id || ep.number} value={ep.number}>
-                      Episode {ep.number}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none" />
+              <div className="relative group/select">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1515] border border-white/10 rounded-xl text-sm font-semibold text-white/90 hover:border-[#850203]/50 transition-all cursor-pointer">
+                  <span>Episode {currentEpisode}</span>
+                  <ChevronDown size={14} className="text-white/40 group-hover/select:text-[#850203] transition-colors" />
+                </div>
+                <div className="absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 invisible group-hover/select:opacity-100 group-hover/select:visible transition-all z-[60] py-1.5">
+                   <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
+                    {list.map(ep => (
+                      <button
+                        key={ep.id || ep.number}
+                        onClick={() => {
+                          setCurrentEpisode(ep.number);
+                          if (type === 'anime') {
+                            const newPage = Math.floor((ep.number - 1) / CHUNK_SIZE);
+                            if (newPage !== episodePage) setEpisodePage(newPage);
+                          }
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm transition-colors ${currentEpisode === ep.number ? 'bg-[#850203] text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                      >
+                        Episode {ep.number}
+                      </button>
+                    ))}
+                   </div>
+                </div>
               </div>
             )}
           </div>
@@ -326,7 +327,7 @@ export default function Details() {
                     if (player) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }}
                 >
-                  <div className={`relative w-full aspect-video rounded-[15px] overflow-hidden mb-3 border-2 transition-colors ${isActive ? 'border-[#850203] shadow-[0_0_15px_rgba(133,2,3,0.3)]' : 'border-transparent'}`}>
+                  <div className={`relative w-full aspect-video rounded-[12px] overflow-hidden mb-3 border-2 transition-all duration-300 ${isActive ? 'border-[#850203] shadow-[0_0_20px_rgba(133,2,3,0.3)]' : 'border-transparent hover:border-white/10'}`}>
                     {ep.image ? (
                       <ImageWithFallback src={ep.image} alt={ep.name} className="w-full h-full object-cover bg-[#2a2424]" />
                     ) : (
@@ -376,7 +377,7 @@ export default function Details() {
         
         {/* Background Layer with proper scaling */}
         <ImageWithFallback
-          src={details.image || details.backdrop}
+          src={details.backdrop || details.image}
           alt={details.title}
           className="absolute inset-0 w-full h-full object-cover object-center opacity-80"
         />
@@ -401,9 +402,6 @@ export default function Details() {
                           {details.title}
                         </h1>
             
-            {details.tagline && (
-              <p className="text-base italic opacity-80 mb-4 text-white drop-shadow-md">"{details.tagline}"</p>
-            )}
 
             {/* Meta info */}
             <div className="flex items-center gap-4 flex-wrap text-sm mb-4 font-medium text-white/90">
@@ -479,46 +477,12 @@ export default function Details() {
         <div className="flex flex-col sm:flex-row flex-wrap gap-8">
           
           <div className="flex flex-col gap-6 flex-1">
-            {/* Multi-source Ratings */}
-            {omdb && (
-              <div>
-                <h3 className="text-sm text-white/50 uppercase tracking-widest mb-3 font-semibold">Ratings</h3>
-                <div className="flex gap-3 flex-wrap">
-                  {omdb.imdb && (
-                    <div className="flex items-center gap-2 bg-[#1a1515] rounded-lg px-3 py-1.5 border border-white/5">
-                      <span className="text-[#f5c518] font-semibold text-xs uppercase tracking-wide">IMDb</span>
-                      <span className="text-white font-medium">{omdb.imdb}</span>
-                    </div>
-                  )}
-                  {omdb.rottenTomatoes && (
-                    <div className="flex items-center gap-2 bg-[#1a1515] rounded-lg px-3 py-1.5 border border-white/5">
-                      <span className="text-red-500 font-semibold text-xs uppercase tracking-wide">RT</span>
-                      <span className="text-white font-medium">{omdb.rottenTomatoes}</span>
-                    </div>
-                  )}
-                  {omdb.metacritic && omdb.metacritic !== 'N/A' && (
-                    <div className="flex items-center gap-2 bg-[#1a1515] rounded-lg px-3 py-1.5 border border-white/5">
-                      <span className="text-green-500 font-semibold text-xs uppercase tracking-wide">Meta</span>
-                      <span className="text-white font-medium">{omdb.metacritic}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Additional details */}
-            {(details.studios?.length > 0 || omdb?.awards && omdb.awards !== 'N/A') && (
+            {details.studios && details.studios.length > 0 && (
               <div className="pt-2 border-t border-white/10">
-                {omdb?.awards && omdb.awards !== 'N/A' && (
-                  <p className="text-sm opacity-70 flex gap-2 mb-2">
-                    <Award size={16} className="text-[#850203]" shrink-0 /> {omdb.awards}
-                  </p>
-                )}
-                {details.studios && details.studios.length > 0 && (
-                  <p className="text-xs opacity-50 mt-2">
-                    Studio: <span className="opacity-80 font-medium">{details.studios.join(', ')}</span>
-                  </p>
-                )}
+                <p className="text-xs opacity-50 mt-2">
+                  Studio: <span className="opacity-80 font-medium">{details.studios.join(', ')}</span>
+                </p>
               </div>
             )}
           </div>

@@ -6,7 +6,7 @@ export default function Sidebar({ onOpenSearch }) {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col items-center gap-8 py-10 pl-6 shrink-0 relative w-28 min-h-screen bg-[#292323]">
+    <div className="flex flex-col items-center gap-5 pt-6 pb-10 pl-6 shrink-0 relative w-28 min-h-screen bg-[#292323]">
       {/* Logo Section */}
       <Link
         to="/"

@@ -209,11 +209,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
       </div>
 
       {/* Footer Info */}
-      <div className="px-6 py-3 bg-[#1a1515] flex items-center justify-between border-t border-white/5">
-        <div className="flex items-center gap-2">
-           <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-           <span className="text-[11px] text-white/40 font-medium uppercase tracking-wider">Stream Health: Excellent</span>
-        </div>
+      <div className="px-6 py-3 bg-[#1a1515] flex items-center justify-end border-t border-white/5">
         <div className="text-[11px] text-white/20 font-mono">
           REF: {currentSource?.name.replace(/[^A-Z0-9]/gi, '').substring(0, 8).toUpperCase()}
         </div>

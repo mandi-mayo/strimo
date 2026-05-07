@@ -114,27 +114,26 @@ app.get('/api/trending', async (req, res) => {
             return res.json(results);
         }
 
-        // Fetch Now Playing Movies and On The Air TV Shows for a "Latest" feel
-        const [moviesRes, tvRes] = await Promise.all([
-            axios.get(`${TMDB_BASE}/movie/now_playing?api_key=${TMDB_KEY}&language=en-US&page=1`),
-            axios.get(`${TMDB_BASE}/tv/on_the_air?api_key=${TMDB_KEY}&language=en-US&page=1`)
-        ]);
+        // Fetch Official Trending All (Movies & TV) for the day
+        const response = await axios.get(`${TMDB_BASE}/trending/all/day?api_key=${TMDB_KEY}&language=en-US`);
+        const results = (response.data.results || [])
+            .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+            .map(item => formatTMDB(item));
 
-        const movies = (moviesRes.data.results || []).map(item => formatTMDB(item, 'movie'));
-        const tv = (tvRes.data.results || []).map(item => formatTMDB(item, 'series'));
-
-        // Interleave movies and TV shows for a diverse carousel
-        const combined = [];
-        const max = Math.max(movies.length, tv.length);
-        for (let i = 0; i < max; i++) {
-            if (movies[i]) combined.push(movies[i]);
-            if (tv[i]) combined.push(tv[i]);
-        }
-
-        res.json(combined.slice(0, 20));
+        res.json(results.slice(0, 20));
     } catch (error) {
-        console.error("❌ Error fetching trending/latest:", error.response?.status || error.message);
+        console.error("❌ Error fetching trending:", error.response?.status || error.message);
         res.status(500).json({ error: 'Failed to fetch trending content' });
+    }
+});
+
+app.get('/api/upcoming', async (req, res) => {
+    try {
+        const response = await axios.get(`${TMDB_BASE}/movie/upcoming?api_key=${TMDB_KEY}&language=en-US&page=1`);
+        const results = (response.data.results || []).map(item => formatTMDB(item, 'movie'));
+        res.json(results);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch upcoming movies' });
     }
 });
 

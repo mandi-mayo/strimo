@@ -126,7 +126,7 @@ export default function SearchModal({ isOpen, onClose }) {
               <div 
                 key={`${item.id}-${idx}`}
                 onClick={() => handleResultClick(item)}
-                className="aspect-[3/4] bg-[#1a1515] rounded-[25px] overflow-hidden relative group cursor-pointer border border-white/5"
+                className="aspect-[2/3] bg-[#1a1515] rounded-[25px] overflow-hidden relative group cursor-pointer border border-white/5"
               >
                 <ImageWithFallback
                   src={item.image}
