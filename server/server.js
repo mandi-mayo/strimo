@@ -9,11 +9,46 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Subtitle Proxy to handle CORS
+app.get('/api/proxy/subtitle', async (req, res) => {
+    const { url } = req.query;
+    if (!url) return res.status(400).send('URL is required');
+    try {
+        const response = await axios.get(url, { responseType: 'text' });
+        res.set('Content-Type', 'text/vtt');
+        res.set('Access-Control-Allow-Origin', '*');
+        res.send(response.data);
+    } catch (error) {
+        res.status(500).send('Failed to fetch subtitle');
+    }
+});
+
+
 const TMDB_KEY = process.env.TMDB_API_KEY;
 const OMDB_KEY = process.env.OMDB_API_KEY;
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 const JIKAN_BASE = 'https://api.jikan.moe/v4';
+
+// VidLink Resolver
+app.get('/api/resolve/vidlink', async (req, res) => {
+    const { id, type, season, episode } = req.query;
+    if (!id) return res.status(400).json({ error: 'ID is required' });
+
+    try {
+        let url = `https://vidlink.pro/api/details/${type || 'movie'}/${id}`;
+        if (type === 'series' || type === 'tv') {
+            url += `/${season || 1}/${episode || 1}`;
+        }
+
+        const response = await axios.get(url);
+        // VidLink returns streams and subtitles
+        res.json(response.data);
+    } catch (error) {
+        console.error("VidLink Resolve Error:", error.message);
+        res.status(500).json({ error: 'Failed to resolve VidLink source' });
+    }
+});
 
 // Helper: format TMDB movie/tv item
 function formatTMDB(item, type) {

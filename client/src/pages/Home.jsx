@@ -44,6 +44,10 @@ export default function Home() {
 
 
 
+  const [popularMovies, setPopularMovies] = useState([]);
+  const [popularTV, setPopularTV] = useState([]);
+  const [loadingPopular, setLoadingPopular] = useState(true);
+
   useEffect(() => {
     // Load watch history from local storage
     try {
@@ -55,10 +59,23 @@ export default function Home() {
       console.error("Failed to load watch history", e);
     }
 
-    api.get(`trending`)
-      .then(r => setTrending(r.data || []))
-      .catch(err => console.error('Trending fetch error:', err.message))
-      .finally(() => setLoadingTrending(false));
+    setLoadingTrending(true);
+    setLoadingPopular(true);
+
+    Promise.all([
+      api.get(`trending`),
+      api.get(`popular/movies`),
+      api.get(`popular/tv`)
+    ]).then(([trendingRes, moviesRes, tvRes]) => {
+      setTrending(trendingRes.data || []);
+      setPopularMovies(moviesRes.data || []);
+      setPopularTV(tvRes.data || []);
+    }).catch(err => {
+      console.error('Data fetch error:', err.message);
+    }).finally(() => {
+      setLoadingTrending(false);
+      setLoadingPopular(false);
+    });
   }, []);
 
   const buildLink = (item) => {
@@ -183,6 +200,82 @@ export default function Home() {
                 <div className="p-4 bg-[#1a1515]">
                   <p className="text-white font-semibold text-sm leading-tight truncate">{item.title}</p>
                   <p className="text-white/50 text-xs mt-1">Resume {item.type === 'series' ? 'Episode' : 'Movie'}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Movies */}
+      {!loadingPopular && popularMovies.length > 0 && (
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl sm:text-[28px] text-white tracking-wide font-medium">Popular Movies</h3>
+            <Link to="/discover/movie" className="text-[11px] text-[#850203] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors">View All</Link>
+          </div>
+          <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
+            {popularMovies.map((item) => (
+              <Link
+                key={item.id}
+                to={buildLink(item)}
+                className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515] rounded-[30px] overflow-hidden snap-start relative group border border-white/5"
+              >
+                <ImageWithFallback
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-5">
+                  <p className="text-white font-semibold text-sm leading-tight truncate mb-1">{item.title}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
+                      <Star size={10} fill="#f5c518" stroke="#f5c518" />
+                      {item.rating}
+                    </span>
+                    <span className="text-white/40 text-[10px]">{item.year}</span>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Play className="text-white fill-white" size={40} />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popular TV Series */}
+      {!loadingPopular && popularTV.length > 0 && (
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl sm:text-[28px] text-white tracking-wide font-medium">Popular TV Series</h3>
+            <Link to="/discover/tv" className="text-[11px] text-[#850203] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors">View All</Link>
+          </div>
+          <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
+            {popularTV.map((item) => (
+              <Link
+                key={item.id}
+                to={buildLink(item)}
+                className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515] rounded-[30px] overflow-hidden snap-start relative group border border-white/5"
+              >
+                <ImageWithFallback
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-5">
+                  <p className="text-white font-semibold text-sm leading-tight truncate mb-1">{item.title}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
+                      <Star size={10} fill="#f5c518" stroke="#f5c518" />
+                      {item.rating}
+                    </span>
+                    <span className="text-white/40 text-[10px]">{item.year}</span>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Play className="text-white fill-white" size={40} />
                 </div>
               </Link>
             ))}

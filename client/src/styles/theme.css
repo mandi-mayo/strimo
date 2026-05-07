@@ -321,3 +321,28 @@
   border-color: rgba(133, 2, 3, 0.3);
   font-weight: 500;
 }
+/* Cinematic Player Enhancements */
+.cinematic-shadow {
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(133, 2, 3, 0.1);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.artplayer-app {
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Customizing Artplayer internal components to match Strimo */
+.art-control-show {
+  background-image: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.7)) !important;
+}
+
+.art-state {
+  background-color: rgba(133, 2, 3, 0.2) !important;
+}
+
+.art-video-player .art-subtitle {
+  transition: all 0.2s ease;
+}

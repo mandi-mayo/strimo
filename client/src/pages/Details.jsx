@@ -531,6 +531,12 @@ export default function Details() {
               <VideoPlayer
                 sources={videoSources}
                 title={details.title}
+                mediaInfo={{
+                  id: details.tmdb_id || details.id,
+                  type: type,
+                  season: currentSeason,
+                  episode: currentEpisode
+                }}
               />
             </div>
             {/* Episodes below player */}
