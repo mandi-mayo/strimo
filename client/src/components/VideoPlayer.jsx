@@ -177,7 +177,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
               <div className="w-16 h-16 border-4 border-t-[#850203] rounded-full absolute top-0 left-0 animate-spin"></div>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <p className="text-white font-medium tracking-wide">Initializing Secure Stream</p>
+              <p className="text-white font-medium tracking-wide">Initializing Secure Sandbox</p>
               <p className="text-white/30 text-[11px] uppercase tracking-[0.2em]">Connecting to {currentSource?.name}</p>
             </div>
           </div>
@@ -198,10 +198,11 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
                 src={currentSource.url}
                 title={`${title} - ${currentSource.name}`}
                 allowFullScreen
-                allow="autoplay; fullscreen; picture-in-picture"
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
                 onLoad={handleIframeLoad}
                 onError={handleIframeError}
-                className="w-full h-full border-none"
+                className="w-full h-full border-none pointer-events-auto"
               />
             )
           )}
