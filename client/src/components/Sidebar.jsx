@@ -24,35 +24,38 @@ export default function Sidebar({ onOpenSearch }) {
       </Link>
 
       {/* Nav Pill */}
-      <div className="bg-[#1a1515] w-[76px] flex-1 rounded-[20px] flex flex-col items-center py-10 gap-8 relative overflow-hidden shadow-2xl border border-white/5">
+      <div className="bg-[#1a1515] w-[76px] flex-1 rounded-[30px] flex flex-col items-center py-12 gap-10 relative overflow-hidden shadow-2xl border border-white/5">
         <Link
           to="/"
           title="Home"
           className={clsx(
-            'flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl transition-all duration-300 w-16 group',
+            'flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all duration-500 w-[60px] aspect-square group relative',
             location.pathname === '/'
-              ? 'text-white bg-white/5'
+              ? 'text-white bg-[#850203]/10'
               : 'text-[#e1dcd8]/40 hover:text-[#e1dcd8] hover:bg-white/5'
           )}
         >
           <Home 
             size={24} 
             className={clsx(
-              'transition-colors',
-              location.pathname === '/' ? 'text-[#850203]' : 'text-inherit opacity-80 group-hover:opacity-100'
+              'transition-all duration-500',
+              location.pathname === '/' ? 'text-[#850203] scale-110' : 'text-inherit opacity-80 group-hover:opacity-100 group-hover:scale-110'
             )} 
             strokeWidth={1.5} 
           />
-          <span className="text-[10px] font-medium tracking-tight">Home</span>
+          <span className="text-[9px] font-bold tracking-wider uppercase">Home</span>
+          {location.pathname === '/' && (
+            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#850203] rounded-r-full shadow-[4px_0_15px_rgba(133,2,3,0.5)]" />
+          )}
         </Link>
         
         <button
           onClick={onOpenSearch}
           title="Search"
-          className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl transition-all duration-300 w-16 group text-[#e1dcd8]/40 hover:text-[#e1dcd8] hover:bg-white/5 cursor-pointer"
+          className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all duration-500 w-[60px] aspect-square group text-[#e1dcd8]/40 hover:text-[#e1dcd8] hover:bg-white/5 cursor-pointer"
         >
-          <Search size={24} className="opacity-80 group-hover:opacity-100 transition-colors" strokeWidth={1.5} />
-          <span className="text-[10px] font-medium tracking-tight">Search</span>
+          <Search size={24} className="opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" strokeWidth={1.5} />
+          <span className="text-[9px] font-bold tracking-wider uppercase">Search</span>
         </button>
 
         {/* Vertical branding */}

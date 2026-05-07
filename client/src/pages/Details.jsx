@@ -149,14 +149,14 @@ export default function Details() {
       }
     } else if (type === 'series') {
       if (tmdbId) {
-        sources.push({ name: '🎬 VidLink PRO', url: `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`, priority: 1 });
+        sources.push({ name: '🎬 VidLink PRO', url: `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`, priority: 2 });
       }
       sources.push({
         name: '📺 VidSrc PM',
         url: imdbId
           ? `https://vidsrc.pm/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
           : `https://vidsrc.pm/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
-        priority: 2
+        priority: 1
       });
       if (tmdbId) {
         sources.push({ name: '📽️ AutoEmbed', url: `https://autoembed.to/tv/tmdb/${tmdbId}-${currentSeason}-${currentEpisode}`, priority: 3 });
@@ -164,11 +164,11 @@ export default function Details() {
         sources.push({ name: '🌐 MultiEmbed', url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${currentSeason}&e=${currentEpisode}`, priority: 5 });
       }
     } else {
-      sources.push({ name: '🎬 VidLink PRO', url: `https://vidlink.pro/movie/${mediaId}`, priority: 1 });
+      sources.push({ name: '🎬 VidLink PRO', url: `https://vidlink.pro/movie/${mediaId}`, priority: 2 });
       sources.push({
         name: '📺 VidSrc PM',
         url: imdbId ? `https://vidsrc.pm/embed/movie?imdb=${imdbId}` : `https://vidsrc.pm/embed/movie?tmdb=${tmdbId}`,
-        priority: 2
+        priority: 1
       });
       if (tmdbId) {
         sources.push({ name: '📽️ AutoEmbed', url: `https://autoembed.to/movie/tmdb/${tmdbId}`, priority: 3 });
@@ -318,26 +318,40 @@ export default function Details() {
               const isActive = ep.number === currentEpisode;
               return (
                 <div
-                  id={`ep-card-${ep.number}`}
                   key={ep.id || ep.number}
-                  className={`flex-none w-[260px] snap-start cursor-pointer group transition-all duration-300 ${isActive ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
+                  id={`ep-card-${ep.number}`}
+                  className="flex-none w-[180px] sm:w-[220px] snap-start cursor-pointer group"
                   onClick={() => {
                     setCurrentEpisode(ep.number);
-                    const player = document.getElementById('player');
-                    if (player) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    if (type === 'anime') {
+                      const newPage = Math.floor((ep.number - 1) / CHUNK_SIZE);
+                      if (newPage !== episodePage) setEpisodePage(newPage);
+                    }
+                    setTimeout(() => {
+                      const player = document.getElementById('player');
+                      if (player) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
                   }}
                 >
-                  <div className={`relative w-full aspect-video rounded-[12px] overflow-hidden mb-3 border-2 transition-all duration-300 ${isActive ? 'border-[#850203] shadow-[0_0_20px_rgba(133,2,3,0.3)]' : 'border-transparent hover:border-white/10'}`}>
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-3">
                     {ep.image ? (
-                      <ImageWithFallback src={ep.image} alt={ep.name} className="w-full h-full object-cover bg-[#2a2424]" />
+                      <ImageWithFallback src={ep.image} alt={ep.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     ) : (
-                      <div className="w-full h-full bg-[#3a3333] flex items-center justify-center text-white/30">
-                        <span className="font-medium">Episode {ep.number}</span>
+                      <div className="w-full h-full bg-[#1a1515] flex items-center justify-center">
+                        <AlertCircle size={24} className="text-white/10" />
                       </div>
                     )}
                     
-                    <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                      <Play className={`fill-current ${isActive ? 'text-[#850203]' : 'text-white'} drop-shadow-lg`} size={40} />
+                    {/* Active/Hover Border Overlay */}
+                    <div className={`absolute inset-0 transition-all duration-300 pointer-events-none rounded-xl ${
+                      isActive 
+                        ? 'border-[2.5px] border-[#850203] shadow-[inset_0_0_15px_rgba(133,2,3,0.4)]' 
+                        : 'border border-white/5 group-hover:border-white/20'
+                    }`} />
+                    
+                    {/* Play Overlay */}
+                    <div className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                      <Play className="text-white fill-white drop-shadow-lg" size={32} />
                     </div>
                     
                     {ep.filler && (
