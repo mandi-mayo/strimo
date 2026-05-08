@@ -78,7 +78,7 @@ export default function SearchModal({ isOpen, onClose }) {
   const allResults = [...results, ...animeResults];
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#1a1515]/95 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#1a1515]/80 backdrop-blur-2xl animate-in fade-in duration-200">
       {/* Background click area to close */}
       <div className="absolute inset-0 z-0" onClick={onClose} />
 
@@ -92,7 +92,7 @@ export default function SearchModal({ isOpen, onClose }) {
 
       {/* Search Bar Container */}
       <div className="w-full max-w-4xl relative z-10 animate-in slide-in-from-top-10 duration-300">
-        <div className="bg-[#292323] border border-white/10 h-[70px] rounded-[35px] flex items-center px-8 relative overflow-hidden focus-within:ring-2 ring-[#850203]/50 transition-all shadow-2xl">
+        <div className="bg-[#292323]/60 backdrop-blur-xl border border-white/10 h-[70px] rounded-[35px] flex items-center px-8 relative overflow-hidden focus-within:ring-2 ring-[#850203]/50 transition-all shadow-2xl">
           <input
             ref={inputRef}
             type="text"
@@ -126,7 +126,7 @@ export default function SearchModal({ isOpen, onClose }) {
               <div 
                 key={`${item.id}-${idx}`}
                 onClick={() => handleResultClick(item)}
-                className="aspect-[2/3] bg-[#1a1515] rounded-[25px] overflow-hidden relative group cursor-pointer border border-white/5"
+                className="aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[25px] overflow-hidden relative group cursor-pointer border border-white/5"
               >
                 <ImageWithFallback
                   src={item.image}

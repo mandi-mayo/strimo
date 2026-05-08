@@ -28,11 +28,14 @@ export default function Layout() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#292323] text-white overflow-x-hidden" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="flex flex-col lg:flex-row min-h-screen bg-transparent text-white overflow-x-hidden" style={{ fontFamily: 'Poppins, sans-serif' }}>
       <Sidebar onOpenSearch={() => setIsSearchOpen(true)} />
-      <main className="flex-1 flex flex-col min-w-0 relative">
+      
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 relative pt-16 lg:pt-0 pb-20 lg:pb-0">
         <Outlet />
       </main>
+      
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
   );

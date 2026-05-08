@@ -9,6 +9,10 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/discover/:type" element={<Home />} />
+          <Route path="/top-rated" element={<Home />} />
+          <Route path="/upcoming" element={<Home />} />
+          <Route path="/history" element={<Home />} />
           <Route path="/details/:id" element={<Details />} />
         </Route>
       </Routes>

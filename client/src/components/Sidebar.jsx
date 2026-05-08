@@ -1,70 +1,219 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search } from 'lucide-react';
+import { 
+  Home, 
+  Search, 
+  Film, 
+  Tv, 
+  Sparkles, 
+  TrendingUp, 
+  Calendar, 
+  History,
+  Command,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function Sidebar({ onOpenSearch }) {
+  const [isExpanded, setIsExpanded] = useState(true);
   const location = useLocation();
 
-  return (
-    <div className="flex flex-col items-center gap-5 pt-6 pb-10 pl-6 shrink-0 relative w-28 min-h-screen bg-[#292323]">
-      {/* Logo Section */}
+  const navItems = [
+    { name: 'Home', icon: Home, path: '/', section: 'BROWSE' },
+    { name: 'Movies', icon: Film, path: '/discover/movie', section: 'BROWSE' },
+    { name: 'TV Shows', icon: Tv, path: '/discover/tv', section: 'BROWSE' },
+    { name: 'Top Anime', icon: Sparkles, path: '/discover/anime', section: 'BROWSE' },
+    { name: 'Coming Soon', icon: Calendar, path: '/upcoming', section: 'BROWSE' },
+    { name: 'History', icon: History, path: '/history', section: 'LIBRARY' },
+  ];
+
+  const browseItems = navItems.filter(item => item.section === 'BROWSE');
+  const libraryItems = navItems.filter(item => item.section === 'LIBRARY');
+
+  const NavLink = ({ item }) => {
+    const isActive = location.pathname === item.path;
+    return (
       <Link
-        to="/"
-        className="w-[72px] h-[72px] bg-gradient-to-br from-[#850203] to-[#5a0102] rounded-full flex items-center justify-center text-white shrink-0 z-10 shadow-[0_8px_20px_rgba(133,2,3,0.3)] hover:scale-105 transition-transform duration-300"
+        to={item.path}
+        title={!isExpanded ? item.name : ''}
+        className={clsx(
+          "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
+          isActive 
+            ? "bg-[#850203]/10 text-white" 
+            : "text-[#e1dcd8]/40 hover:text-white hover:bg-white/5",
+          !isExpanded && "justify-center px-0"
+        )}
       >
-        <img 
-          src="/strimo-logo.svg" 
-          alt="Strimo" 
-          className="w-10 h-10" 
-          onError={(e) => { 
-            e.target.style.display = 'none'; 
-            e.target.parentElement.textContent = 'S'; 
-          }} 
-        />
-      </Link>
-
-      {/* Nav Pill */}
-      <div className="bg-[#1a1515] w-[76px] flex-1 rounded-[30px] flex flex-col items-center py-12 gap-10 relative overflow-hidden shadow-2xl border border-white/5">
-        <Link
-          to="/"
-          title="Home"
+        {isActive && isExpanded && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#850203] rounded-r-full shadow-[2px_0_10px_rgba(133,2,3,0.8)]" />
+        )}
+        <item.icon 
+          size={22} 
           className={clsx(
-            'flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all duration-500 w-[60px] aspect-square group relative',
-            location.pathname === '/'
-              ? 'text-white bg-[#850203]/10'
-              : 'text-[#e1dcd8]/40 hover:text-[#e1dcd8] hover:bg-white/5'
-          )}
-        >
-          <Home 
-            size={24} 
-            className={clsx(
-              'transition-all duration-500',
-              location.pathname === '/' ? 'text-[#850203] scale-110' : 'text-inherit opacity-80 group-hover:opacity-100 group-hover:scale-110'
-            )} 
-            strokeWidth={1.5} 
-          />
-          <span className="text-[9px] font-bold tracking-wider uppercase">Home</span>
-          {location.pathname === '/' && (
-            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#850203] rounded-r-full shadow-[4px_0_15px_rgba(133,2,3,0.5)]" />
-          )}
-        </Link>
-        
-        <button
-          onClick={onOpenSearch}
-          title="Search"
-          className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all duration-500 w-[60px] aspect-square group text-[#e1dcd8]/40 hover:text-[#e1dcd8] hover:bg-white/5 cursor-pointer"
-        >
-          <Search size={24} className="opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" strokeWidth={1.5} />
-          <span className="text-[9px] font-bold tracking-wider uppercase">Search</span>
-        </button>
-
-        {/* Vertical branding */}
-        <div className="mt-auto mb-8 flex items-center justify-center -rotate-90 origin-center absolute bottom-12">
-          <span className="text-[#850203] text-sm tracking-[0.2em] whitespace-nowrap font-medium opacity-80">
-            STRIMO
+            "transition-colors duration-300 shrink-0",
+            isActive ? "text-[#850203]" : "group-hover:text-white"
+          )} 
+          strokeWidth={isActive ? 2 : 1.5}
+        />
+        {isExpanded && (
+          <span className="font-semibold text-base tracking-wide whitespace-nowrap overflow-hidden animate-in fade-in duration-500">
+            {item.name}
           </span>
+        )}
+      </Link>
+    );
+  };
+
+  return (
+    <>
+      {/* Mobile Top Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#0f0d0d]/60 backdrop-blur-xl border-b border-white/5 z-[100] flex items-center px-6 justify-between">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
+            <img src="/logo.svg" alt="s" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center font-bold text-xl tracking-tight">
+            <span className="text-white">strimo</span>
+          </div>
+        </Link>
+        <button 
+          onClick={onOpenSearch}
+          className="p-2.5 bg-white/5 rounded-xl text-white/70 hover:text-white"
+        >
+          <Search size={20} />
+        </button>
+      </div>
+
+      {/* Desktop Sidebar Wrapper */}
+      <div 
+        className={clsx(
+          "hidden lg:flex flex-col h-[calc(100vh-2rem)] bg-[#0f0d0d]/40 backdrop-blur-2xl border border-white/5 shrink-0 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] relative z-[100] m-4 rounded-2xl shadow-2xl",
+          isExpanded ? "w-64" : "w-20"
+        )}
+      >
+        {/* Scrollable Content Container */}
+        <div className="flex-1 flex flex-col overflow-y-auto hide-scrollbar">
+          {/* Brand Section */}
+          <div className={clsx(
+            "pt-8 pb-4 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            isExpanded ? "px-6" : "px-4"
+          )}>
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-110 shrink-0">
+                <img src="/logo.svg" alt="Strimo" className="w-full h-full object-contain" />
+              </div>
+              {isExpanded && (
+                <div className="flex items-center font-bold text-2xl tracking-tighter whitespace-nowrap animate-in fade-in slide-in-from-left-4 duration-700">
+                  <span className="text-white">strimo</span>
+                </div>
+              )}
+            </Link>
+          </div>
+
+          {/* Toggle Button - Now placed below logo */}
+          <div className={clsx(
+            "px-6 pb-6 flex transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            isExpanded ? "justify-start" : "justify-center px-4"
+          )}>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-8 h-8 bg-white/5 hover:bg-[#850203] text-white/40 hover:text-white rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer group"
+              title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+            >
+              {isExpanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+            </button>
+          </div>
+
+
+          {/* Search Bar */}
+
+          <div className={clsx(
+            "mb-8 transition-all duration-500",
+            isExpanded ? "px-6" : "px-4"
+          )}>
+            <button 
+              onClick={onOpenSearch}
+              className={clsx(
+                "flex items-center bg-[#1a1717] hover:bg-[#221f1f] border border-white/5 rounded-2xl text-[#e1dcd8]/30 transition-all duration-300 group overflow-hidden",
+                isExpanded ? "w-full gap-3 px-4 py-3.5" : "w-12 h-12 justify-center p-0"
+              )}
+              title={!isExpanded ? "Search (Cmd K)" : ""}
+            >
+              <Search size={18} className="group-hover:text-white/60 transition-colors shrink-0" />
+              {isExpanded && (
+                <>
+                  <span className="flex-1 text-left text-sm font-medium group-hover:text-white/60 transition-colors whitespace-nowrap">Search...</span>
+                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-white/5 rounded-md border border-white/10 shrink-0">
+                    <Command size={10} />
+                    <span className="text-[10px] font-bold">K</span>
+                  </div>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Navigation Sections */}
+          <div className={clsx(
+            "flex-1 space-y-10 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            isExpanded ? "px-4" : "px-2"
+          )}>
+            {/* Browse Section */}
+            <div>
+              {isExpanded && (
+                <h3 className="px-4 mb-5 text-[11px] font-bold text-white/20 tracking-[0.2em] uppercase whitespace-nowrap animate-in fade-in duration-500">
+                  Browse
+                </h3>
+              )}
+              <div className="space-y-2.5">
+                {browseItems.map(item => <NavLink key={item.name} item={item} />)}
+              </div>
+            </div>
+
+            {/* Library Section */}
+            <div>
+              {isExpanded && (
+                <h3 className="px-4 mb-5 text-[11px] font-bold text-white/20 tracking-[0.2em] uppercase whitespace-nowrap animate-in fade-in duration-500">
+                  Library
+                </h3>
+              )}
+              <div className="space-y-2.5">
+                {libraryItems.map(item => <NavLink key={item.name} item={item} />)}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0f0d0d]/60 backdrop-blur-2xl border-t border-white/5 z-[100] flex items-center justify-around px-6 pb-2">
+        {navItems.slice(0, 4).map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.name}
+              to={item.path}
+              className={clsx(
+                'flex flex-col items-center gap-1 p-2 transition-all duration-300',
+                isActive ? 'text-[#850203]' : 'text-white/40'
+              )}
+            >
+              <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
+              <span className="text-[10px] font-bold tracking-wider uppercase">{item.name}</span>
+            </Link>
+          );
+        })}
+        <button
+          onClick={onOpenSearch}
+          className="flex flex-col items-center gap-1 p-2 text-white/40 active:text-white transition-all"
+        >
+          <Search size={22} strokeWidth={1.5} />
+          <span className="text-[10px] font-bold tracking-wider uppercase">Search</span>
+        </button>
+      </nav>
+    </>
   );
 }
+
+
