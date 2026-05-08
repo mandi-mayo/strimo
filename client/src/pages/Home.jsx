@@ -228,6 +228,18 @@ export default function Home() {
   return (
     <div className="flex-1 py-5 px-5 lg:px-8 flex flex-col gap-6 overflow-y-auto">
       
+      {/* ─── Brand Logo Header ────────────────────────────────────── */}
+      <div className="flex items-center justify-between shrink-0 pt-2 pb-1">
+        <Link to="/" className="relative group cursor-pointer">
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#dc2626] to-[#b91c1c] opacity-20 blur-lg group-hover:opacity-45 transition duration-500"></div>
+          <img 
+            src="/strimo-logo.svg" 
+            alt="Strimo Logo" 
+            className="relative h-12 sm:h-16 w-auto object-contain transition-transform duration-500 hover:scale-[1.02]"
+          />
+        </Link>
+      </div>
+
       {/* ─── Featured Carousel (kept as-is) ──────────────────────── */}
       {loadingTrending ? (
         <div className="flex items-center justify-center h-[280px]">
