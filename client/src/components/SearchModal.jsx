@@ -78,7 +78,7 @@ export default function SearchModal({ isOpen, onClose }) {
   const allResults = [...results, ...animeResults];
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#1a1515]/95 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#111010]/95 backdrop-blur-md animate-in fade-in duration-200">
       {/* Background click area to close */}
       <div className="absolute inset-0 z-0" onClick={onClose} />
 
@@ -92,7 +92,7 @@ export default function SearchModal({ isOpen, onClose }) {
 
       {/* Search Bar Container */}
       <div className="w-full max-w-4xl relative z-10 animate-in slide-in-from-top-10 duration-300">
-        <div className="bg-[#292323] border border-white/10 h-[70px] rounded-[35px] flex items-center px-8 relative overflow-hidden focus-within:ring-2 ring-[#850203]/50 transition-all shadow-2xl">
+        <div className="bg-[#1a1717] border border-white/10 h-[64px] rounded-2xl flex items-center px-8 relative overflow-hidden focus-within:ring-2 ring-[#dc2626]/30 transition-all shadow-2xl">
           <input
             ref={inputRef}
             type="text"
@@ -110,7 +110,7 @@ export default function SearchModal({ isOpen, onClose }) {
               <X size={20} />
             </button>
           )}
-          <SearchIcon className="text-[#850203] shrink-0" size={28} strokeWidth={2} />
+          <SearchIcon className="text-[#dc2626] shrink-0" size={24} strokeWidth={2} />
         </div>
       </div>
 
@@ -121,12 +121,12 @@ export default function SearchModal({ isOpen, onClose }) {
             <div className="spinner" />
           </div>
         ) : allResults.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 pb-8 animate-in fade-in duration-300">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-8 animate-in fade-in duration-300">
             {allResults.filter(i => i.image).map((item, idx) => (
               <div 
                 key={`${item.id}-${idx}`}
                 onClick={() => handleResultClick(item)}
-                className="aspect-[2/3] bg-[#1a1515] rounded-[25px] overflow-hidden relative group cursor-pointer border border-white/5"
+                className="aspect-[2/3] bg-[#1a1717] rounded-2xl overflow-hidden relative group cursor-pointer border border-white/[0.04] hover:border-white/10 transition-all"
               >
                 <ImageWithFallback
                   src={item.image}
