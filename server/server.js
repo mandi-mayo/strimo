@@ -13,6 +13,8 @@ app.use(express.json());
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const https = require('https');
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+axios.defaults.timeout = 15000;
+axios.defaults.httpsAgent = httpsAgent;
 
 // Subtitle Proxy to handle CORS
 app.get('/api/proxy/subtitle', async (req, res) => {
@@ -31,7 +33,7 @@ app.get('/api/proxy/subtitle', async (req, res) => {
 
 const TMDB_KEY = process.env.TMDB_API_KEY;
 const OMDB_KEY = process.env.OMDB_API_KEY;
-const TMDB_BASE = 'https://api.themoviedb.org/3';
+const TMDB_BASE = 'https://api.tmdb.org/3';
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 const JIKAN_BASE = 'https://api.jikan.moe/v4';
 

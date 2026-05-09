@@ -73,8 +73,8 @@ export default function Sidebar({ onOpenSearch }) {
           <div className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
             <img src="/logo.svg" alt="s" className="w-full h-full object-contain" />
           </div>
-          <div className="flex items-center font-bold text-xl tracking-tight">
-            <span className="text-white">strimo</span>
+          <div className="flex items-center">
+            <img src="/strimo-text.svg" alt="strimo" className="h-6 w-auto object-contain" />
           </div>
         </Link>
         <button 
@@ -104,8 +104,8 @@ export default function Sidebar({ onOpenSearch }) {
                 <img src="/logo.svg" alt="Strimo" className="w-full h-full object-contain" />
               </div>
               {isExpanded && (
-                <div className="flex items-center font-bold text-2xl tracking-tighter whitespace-nowrap animate-in fade-in slide-in-from-left-4 duration-700">
-                  <span className="text-white">strimo</span>
+                <div className="flex items-center animate-in fade-in slide-in-from-left-4 duration-700">
+                  <img src="/strimo-text.svg" alt="strimo" className="h-7 w-auto object-contain" />
                 </div>
               )}
             </Link>

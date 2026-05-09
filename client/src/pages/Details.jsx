@@ -25,7 +25,12 @@ export default function Details() {
   const [episodePage, setEpisodePage] = useState(0);
   const [jumpEpisode, setJumpEpisode] = useState('');
 
+  const [showSeasonSelect, setShowSeasonSelect] = useState(false);
+  const [showEpisodeSelect, setShowEpisodeSelect] = useState(false);
+
   const episodeScrollRef = useRef(null);
+  const seasonSelectRef = useRef(null);
+  const episodeSelectRef = useRef(null);
 
   // Fetch details
   useEffect(() => {
@@ -110,6 +115,20 @@ export default function Details() {
       console.error("Failed to save watch history", e);
     }
   }, [details, id, type, imdbParam, malParam, source, currentEpisode, currentSeason]);
+
+  // Click outside listener for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (seasonSelectRef.current && !seasonSelectRef.current.contains(event.target)) {
+        setShowSeasonSelect(false);
+      }
+      if (episodeSelectRef.current && !episodeSelectRef.current.contains(event.target)) {
+        setShowEpisodeSelect(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (loading) {
     return (
@@ -219,17 +238,26 @@ export default function Details() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
             {type === 'series' && details.seasons && details.seasons.length > 0 && (
-              <div className="relative group/select">
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1515] border border-white/10 rounded-xl text-sm font-semibold text-white/90 hover:border-[#850203]/50 transition-all cursor-pointer">
+              <div className="relative" ref={seasonSelectRef}>
+                <div 
+                  onClick={() => {
+                    setShowSeasonSelect(!showSeasonSelect);
+                    setShowEpisodeSelect(false);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2.5 bg-[#1a1515] border rounded-xl text-sm font-semibold transition-all cursor-pointer ${showSeasonSelect ? 'border-[#850203] text-[#850203]' : 'border-white/10 text-white/90 hover:border-[#850203]/50'}`}
+                >
                   <span>Season {currentSeason}</span>
-                  <ChevronDown size={14} className="text-white/40 group-hover/select:text-[#850203] transition-colors" />
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${showSeasonSelect ? 'rotate-180 text-[#850203]' : 'text-white/40'}`} />
                 </div>
-                <div className="absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 invisible group-hover/select:opacity-100 group-hover/select:visible transition-all z-[60] py-1.5">
+                <div className={`absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden transition-all z-[60] py-1.5 ${showSeasonSelect ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
                    <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
                     {details.seasons.map(s => (
                       <button
                         key={s.season_number}
-                        onClick={() => setCurrentSeason(s.season_number)}
+                        onClick={() => {
+                          setCurrentSeason(s.season_number);
+                          setShowSeasonSelect(false);
+                        }}
                         className={`w-full px-4 py-2 text-left text-sm transition-colors ${currentSeason === s.season_number ? 'bg-[#850203] text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
                       >
                         Season {s.season_number}
@@ -241,18 +269,25 @@ export default function Details() {
             )}
 
             {list.length > 0 && (
-              <div className="relative group/select">
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1515] border border-white/10 rounded-xl text-sm font-semibold text-white/90 hover:border-[#850203]/50 transition-all cursor-pointer">
+              <div className="relative" ref={episodeSelectRef}>
+                <div 
+                  onClick={() => {
+                    setShowEpisodeSelect(!showEpisodeSelect);
+                    setShowSeasonSelect(false);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2.5 bg-[#1a1515] border rounded-xl text-sm font-semibold transition-all cursor-pointer ${showEpisodeSelect ? 'border-[#850203] text-[#850203]' : 'border-white/10 text-white/90 hover:border-[#850203]/50'}`}
+                >
                   <span>Episode {currentEpisode}</span>
-                  <ChevronDown size={14} className="text-white/40 group-hover/select:text-[#850203] transition-colors" />
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${showEpisodeSelect ? 'rotate-180 text-[#850203]' : 'text-white/40'}`} />
                 </div>
-                <div className="absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 invisible group-hover/select:opacity-100 group-hover/select:visible transition-all z-[60] py-1.5">
+                <div className={`absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden transition-all z-[60] py-1.5 ${showEpisodeSelect ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
                    <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
                     {list.map(ep => (
                       <button
                         key={ep.id || ep.number}
                         onClick={() => {
                           setCurrentEpisode(ep.number);
+                          setShowEpisodeSelect(false);
                           if (type === 'anime') {
                             const newPage = Math.floor((ep.number - 1) / CHUNK_SIZE);
                             if (newPage !== episodePage) setEpisodePage(newPage);
@@ -529,7 +564,14 @@ export default function Details() {
         {showTrailer && details.trailer && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 lg:p-20 backdrop-blur-md animate-in fade-in duration-200" onClick={() => setShowTrailer(false)}>
             <div className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-              <iframe src={details.trailer} title="Trailer" allowFullScreen allow="autoplay; fullscreen" className="w-full h-full border-none" />
+              <iframe 
+                src={details.trailer} 
+                title="Trailer" 
+                allowFullScreen 
+                allow="autoplay; fullscreen" 
+                sandbox="allow-scripts allow-same-origin"
+                className="w-full h-full border-none" 
+              />
               <button onClick={() => setShowTrailer(false)} className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-[#850203] text-white rounded-full backdrop-blur-md transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
