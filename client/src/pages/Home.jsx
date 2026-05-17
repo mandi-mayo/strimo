@@ -11,8 +11,8 @@ export default function Home() {
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [watchHistory, setWatchHistory] = useState([]);
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
-    loop: false, 
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: false,
     align: 'center',
     containScroll: false,
     dragFree: true,
@@ -135,22 +135,29 @@ export default function Home() {
           <div className="spinner" />
         </div>
       ) : trending.length > 0 ? (
-        <div className="relative w-full max-w-[1400px] mx-auto overflow-hidden py-6 sm:py-10 px-0 sm:px-10">
+        <div className="relative w-full max-w-full mx-auto overflow-hidden py-6 sm:py-10 px-0">
+          {/* Edge Gradient Overlays for Natural Ends */}
+          <div className="absolute top-0 bottom-0 left-0 w-20 sm:w-48 bg-gradient-to-r from-[#0a0808] via-[#0a0808]/95 to-transparent pointer-events-none" style={{ zIndex: 45 }} />
+          <div className="absolute top-0 bottom-0 right-0 w-20 sm:w-48 bg-gradient-to-l from-[#0a0808] via-[#0a0808]/95 to-transparent pointer-events-none" style={{ zIndex: 45 }} />
+
           <div ref={emblaRef}>
             <div className="flex touch-pan-y items-center h-[320px] sm:h-[450px]">
               {trending.map((item, idx) => {
                 const diff = Math.abs(idx - selectedIndex);
                 const isCenter = diff === 0;
                 const scale = isCenter ? 1 : diff === 1 ? 0.85 : diff === 2 ? 0.7 : 0.55;
+                const opacity = isCenter ? 1 : diff === 1 ? 0.85 : diff === 2 ? 0.6 : 0.35;
                 const zIndex = 50 - diff * 10;
-                
+
                 return (
-                  <div 
-                    key={`${item.id}-${idx}`} 
-                    className="flex-[0_0_auto] w-[220px] sm:w-[320px] transition-all duration-800 ease-out cursor-pointer -mx-12 sm:-mx-16"
-                    style={{ 
+                  <div
+                    key={`${item.id}-${idx}`}
+                    className="flex-[0_0_auto] w-[220px] sm:w-[320px] cursor-pointer -mx-12 sm:-mx-16"
+                    style={{
                       transform: `scale(${scale})`,
+                      opacity: opacity,
                       zIndex: zIndex,
+                      transition: 'transform 850ms cubic-bezier(0.16, 1, 0.3, 1), opacity 850ms cubic-bezier(0.16, 1, 0.3, 1)',
                     }}
                     onMouseEnter={() => {
                       if (!isCenter && emblaApi) {
@@ -166,20 +173,33 @@ export default function Home() {
                   >
                     <Link 
                       to={buildLink(item)} 
-                      className="block relative w-full aspect-[2/3] rounded-3xl overflow-hidden bg-[#1a1515]/40 backdrop-blur-md shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-white/5 group"
+                      className="block relative w-full aspect-[2/3] rounded-[2rem] overflow-hidden bg-[#1a1515]/40 backdrop-blur-md shadow-2xl border border-white/5 group transition-all duration-700 hover:border-white/20"
                     >
                       <ImageWithFallback
                         src={item.image || item.backdrop}
                         alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 sm:p-6 pb-5">
-                        <h3 className="text-white font-semibold text-lg sm:text-xl text-center leading-tight truncate w-full drop-shadow-md transition-colors group-hover:text-[#850203]">
-                          {item.title}
-                        </h3>
-                        <p className="text-white/60 text-xs sm:text-sm text-center mt-1 font-medium tracking-wide uppercase">
-                          {item.year ? `${item.type === 'series' ? 'TV Series' : item.type} • ${item.year}` : (item.type === 'series' ? 'TV Series' : item.type)}
-                        </p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700" />
+                      
+                      <div className="absolute inset-0 flex flex-col justify-end p-6">
+                        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                          <h3 className="text-white font-bold text-xl sm:text-2xl leading-tight truncate w-full drop-shadow-2xl transition-colors duration-700 group-hover:text-[#ff1a1c]">
+                            {item.title}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                            <span className="text-xs font-bold text-[#850203] uppercase tracking-widest bg-[#850203]/10 px-2 py-1 rounded">
+                              {item.type === 'series' ? 'TV' : 'Movie'}
+                            </span>
+                            <span className="text-white/40 text-xs font-medium">{item.year}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                         <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-200">
+                            <Play className="text-white fill-white ml-1 drop-shadow-md" size={28} />
+                         </div>
                       </div>
                     </Link>
                   </div>
@@ -205,44 +225,47 @@ export default function Home() {
 
       {/* Continue Watching */}
       {watchHistory.length > 0 && (
-        <div ref={historyRef} className="flex flex-col gap-4 group/section relative scroll-mt-20">
+        <div className="flex flex-col gap-4 group/section relative scroll-mt-20">
           <h3 className="text-2xl sm:text-[28px] text-white tracking-wide flex items-center gap-2 font-medium">
             Continue Watching
           </h3>
           <div className="relative">
-            <div 
+            <div
+              ref={historyRef}
               className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar scroll-smooth"
             >
               {watchHistory.map((item, idx) => (
                 <Link
                   key={`${item.id}-${idx}`}
                   to={item.link}
-                  className="flex-none w-[220px] sm:w-[260px] bg-[#1a1515]/40 backdrop-blur-md rounded-[25px] overflow-hidden snap-start relative group border border-white/5"
+                  className="flex-none w-[220px] sm:w-[260px] bg-[#1a1515]/40 backdrop-blur-md rounded-[2rem] overflow-hidden snap-start relative group border border-white/5 transition-all duration-700 hover:border-white/20 hover:shadow-2xl hover:-translate-y-1"
                 >
-                  <div className="h-[140px] sm:h-[150px] relative">
+                  <div className="h-[140px] sm:h-[150px] relative overflow-hidden">
                     <ImageWithFallback
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80"
+                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                      <Play className="text-white fill-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" size={40} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-80 transition-opacity duration-200 flex items-center justify-center">
+                       <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-200">
+                          <Play className="text-white fill-white ml-1 drop-shadow-md" size={24} />
+                       </div>
                     </div>
                   </div>
-                  <div className="p-4 bg-[#1a1515]">
-                    <p className="text-white font-semibold text-sm leading-tight truncate">{item.title}</p>
+                  <div className="p-4 bg-[#1a1515] transition-colors duration-200 group-hover:bg-[#1a1515]/80">
+                    <p className="text-white font-bold text-sm leading-tight truncate transition-colors duration-700 group-hover:text-[#ff1a1c]">{item.title}</p>
                   </div>
                 </Link>
               ))}
             </div>
-            
-            <button 
+
+            <button
               onClick={() => scroll(historyRef, 'left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
               <ChevronLeft size={28} />
             </button>
-            <button 
+            <button
               onClick={() => scroll(historyRef, 'right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
@@ -254,49 +277,54 @@ export default function Home() {
 
       {/* Popular Movies */}
       {!loadingPopular && popularMovies.length > 0 && (
-        <div ref={moviesRef} className="flex flex-col gap-6 group/section relative scroll-mt-20">
+        <div className="flex flex-col gap-6 group/section relative scroll-mt-20">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl sm:text-[28px] text-white tracking-wide font-medium">Popular Movies</h3>
-            <Link to="/discover/movie" className="text-[11px] text-[#850203] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors">View All</Link>
+
           </div>
           <div className="relative">
-            <div 
+            <div
+              ref={moviesRef}
               className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar scroll-smooth"
             >
               {popularMovies.map((item) => (
                 <Link
                   key={item.id}
                   to={buildLink(item)}
-                  className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[30px] overflow-hidden snap-start relative group border border-white/5"
+                  className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[2rem] overflow-hidden snap-start relative group border border-white/5 transition-all duration-700 hover:border-white/20"
                 >
                   <ImageWithFallback
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-5">
-                    <p className="text-white font-semibold text-sm leading-tight truncate mb-1">{item.title}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
-                        <Star size={10} fill="#f5c518" stroke="#f5c518" />
-                        {item.rating}
-                      </span>
-                      <span className="text-white/40 text-[10px]">{item.year}</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-5">
+                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                      <p className="text-white font-bold text-sm leading-tight truncate mb-1 transition-colors duration-700 group-hover:text-[#ff1a1c]">{item.title}</p>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                        <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
+                          <Star size={10} fill="#f5c518" stroke="#f5c518" />
+                          {item.rating}
+                        </span>
+                        <span className="text-white/40 text-[10px]">{item.year}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="text-white fill-white" size={40} />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
+                    <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-200">
+                       <Play className="text-white fill-white ml-1 drop-shadow-md" size={24} />
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
-            <button 
+            <button
               onClick={() => scroll(moviesRef, 'left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
               <ChevronLeft size={28} />
             </button>
-            <button 
+            <button
               onClick={() => scroll(moviesRef, 'right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
@@ -308,49 +336,54 @@ export default function Home() {
 
       {/* Popular TV Series */}
       {!loadingPopular && popularTV.length > 0 && (
-        <div ref={tvRef} className="flex flex-col gap-6 group/section relative scroll-mt-20">
+        <div className="flex flex-col gap-6 group/section relative scroll-mt-20">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl sm:text-[28px] text-white tracking-wide font-medium">Popular TV Series</h3>
-            <Link to="/discover/tv" className="text-[11px] text-[#850203] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors">View All</Link>
+
           </div>
           <div className="relative">
-            <div 
+            <div
+              ref={tvRef}
               className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar scroll-smooth"
             >
               {popularTV.map((item) => (
                 <Link
                   key={item.id}
                   to={buildLink(item)}
-                  className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[30px] overflow-hidden snap-start relative group border border-white/5"
+                  className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[2rem] overflow-hidden snap-start relative group border border-white/5 transition-all duration-700 hover:border-white/20"
                 >
                   <ImageWithFallback
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-5">
-                    <p className="text-white font-semibold text-sm leading-tight truncate mb-1">{item.title}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
-                        <Star size={10} fill="#f5c518" stroke="#f5c518" />
-                        {item.rating}
-                      </span>
-                      <span className="text-white/40 text-[10px]">{item.year}</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-5">
+                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                      <p className="text-white font-bold text-sm leading-tight truncate mb-1 transition-colors duration-700 group-hover:text-[#ff1a1c]">{item.title}</p>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                        <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
+                          <Star size={10} fill="#f5c518" stroke="#f5c518" />
+                          {item.rating}
+                        </span>
+                        <span className="text-white/40 text-[10px]">{item.year}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="text-white fill-white" size={40} />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
+                    <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-200">
+                       <Play className="text-white fill-white ml-1 drop-shadow-md" size={24} />
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
-            <button 
+            <button
               onClick={() => scroll(tvRef, 'left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
               <ChevronLeft size={28} />
             </button>
-            <button 
+            <button
               onClick={() => scroll(tvRef, 'right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
@@ -362,51 +395,56 @@ export default function Home() {
 
       {/* Top Anime Section */}
       {!loadingPopular && popularAnime.length > 0 && (
-        <div ref={animeRef} className="flex flex-col gap-6 group/section relative scroll-mt-20">
+        <div className="flex flex-col gap-6 group/section relative scroll-mt-20">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl sm:text-[28px] text-white tracking-wide flex items-center gap-3 font-medium">
               Top Anime
             </h3>
-            <Link to="/discover/anime" className="text-[11px] text-[#850203] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors">View All</Link>
           </div>
+
           <div className="relative">
-            <div 
+            <div
+              ref={animeRef}
               className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar scroll-smooth"
             >
               {popularAnime.map((item) => (
                 <Link
                   key={item.id}
                   to={buildLink(item)}
-                  className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[30px] overflow-hidden snap-start relative group border border-white/5"
+                  className="flex-none w-[180px] sm:w-[220px] aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[2rem] overflow-hidden snap-start relative group border border-white/5 transition-all duration-700 hover:border-white/20"
                 >
                   <ImageWithFallback
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-5">
-                    <p className="text-white font-semibold text-sm leading-tight truncate mb-1">{item.title}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
-                        <Star size={10} fill="#f5c518" stroke="#f5c518" />
-                        {item.rating}
-                      </span>
-                      <span className="text-white/40 text-[10px]">{item.year}</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-5">
+                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                      <p className="text-white font-bold text-sm leading-tight truncate mb-1">{item.title}</p>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                        <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5">
+                          <Star size={10} fill="#f5c518" stroke="#f5c518" />
+                          {item.rating}
+                        </span>
+                        <span className="text-white/40 text-[10px]">{item.year}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="text-white fill-white" size={40} />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 flex items-center justify-center">
+                    <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-500">
+                       <Play className="text-white fill-white ml-1" size={24} />
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
-            <button 
+            <button
               onClick={() => scroll(animeRef, 'left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
               <ChevronLeft size={28} />
             </button>
-            <button 
+            <button
               onClick={() => scroll(animeRef, 'right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
             >
@@ -416,54 +454,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Upcoming Movies */}
-      {!loadingPopular && upcoming.length > 0 && (
-        <div ref={upcomingRef} className="flex flex-col gap-6 group/section relative scroll-mt-20">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl sm:text-[28px] text-white tracking-wide font-medium">Coming Soon</h3>
-            <span className="text-[10px] bg-[#850203]/20 text-[#850203] px-2 py-1 rounded-md font-bold uppercase tracking-wider">Upcoming</span>
-          </div>
-          <div className="relative">
-            <div 
-              className="flex gap-5 overflow-x-auto pb-10 snap-x snap-mandatory hide-scrollbar scroll-smooth"
-            >
-              {upcoming.map((item) => (
-                <Link
-                  key={item.id}
-                  to={buildLink(item)}
-                  className="flex-none w-[200px] sm:w-[240px] aspect-video bg-[#1a1515] rounded-[20px] overflow-hidden snap-start relative group border border-white/5"
-                >
-                  <ImageWithFallback
-                    src={item.backdrop || item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent flex flex-col justify-end p-4">
-                    <p className="text-white font-semibold text-xs leading-tight truncate">{item.title}</p>
-                    <p className="text-white/40 text-[10px] mt-1">{item.year}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <button 
-              onClick={() => scroll(upcomingRef, 'left')}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
-            >
-              <ChevronLeft size={28} />
-            </button>
-            <button 
-              onClick={() => scroll(upcomingRef, 'right')}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
-            >
-              <ChevronRight size={28} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      <footer className="text-center py-8 text-white/30 text-sm border-t border-white/5 mt-auto">
-        <p>Strimo — Powered by TMDB, TVMaze, Jikan & OMDb</p>
-      </footer>
     </div>
   );
 }

@@ -126,32 +126,33 @@ export default function SearchModal({ isOpen, onClose }) {
               <div 
                 key={`${item.id}-${idx}`}
                 onClick={() => handleResultClick(item)}
-                className="aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[25px] overflow-hidden relative group cursor-pointer border border-white/5"
+                className="aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[2rem] overflow-hidden relative group cursor-pointer border border-white/5 transition-all duration-700 hover:border-white/20 hover:shadow-2xl hover:-translate-y-1"
               >
                 <ImageWithFallback
                   src={item.image}
                   alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
-                  <Play className="text-white fill-white self-center mb-auto mt-auto drop-shadow-lg" size={44} />
-                  <p className="text-white font-semibold text-sm leading-tight text-center mb-1">{item.title}</p>
-                  <div className="flex items-center justify-center gap-2">
-                    {item.rating && (
-                      <span className="text-[#f5c518] text-xs flex items-center gap-0.5">
-                        <Star size={10} fill="#f5c518" stroke="#f5c518" />
-                        <span className="font-semibold">{item.rating}</span>
-                      </span>
-                    )}
-                    <span className="text-white/50 text-xs">{item.year}</span>
-                    <span className="text-white/40 text-[10px] uppercase">
-                      {item.type === 'series' ? 'TV' : item.type}
-                    </span>
-                  </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-5">
+                   <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                      <p className="text-white font-bold text-sm leading-tight mb-2 group-hover:text-[#ff1a1c] line-clamp-2">{item.title}</p>
+                      <div className="flex items-center gap-3">
+                        {item.rating && (
+                          <span className="text-[#f5c518] text-xs flex items-center gap-1 font-bold">
+                            <Star size={12} fill="#f5c518" stroke="#f5c518" />
+                            {item.rating}
+                          </span>
+                        )}
+                        <span className="text-white/40 text-[10px] font-bold tracking-wider">{item.year}</span>
+                      </div>
+                   </div>
                 </div>
-                {/* Always-visible title strip at bottom */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 group-hover:opacity-0 transition-opacity">
-                  <p className="text-white text-xs font-medium truncate">{item.title}</p>
+
+                {/* Play Button Icon on Hover */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-50 group-hover:scale-100 pointer-events-none">
+                  <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl">
+                    <Play className="text-white fill-white ml-1 drop-shadow-md" size={24} />
+                  </div>
                 </div>
               </div>
             ))}

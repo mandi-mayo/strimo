@@ -32,7 +32,7 @@ export default function Layout() {
       <Sidebar onOpenSearch={() => setIsSearchOpen(true)} />
       
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 relative pt-16 lg:pt-0 pb-20 lg:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 relative pt-24 lg:pt-0 pb-6 lg:pb-0">
         <Outlet />
       </main>
       

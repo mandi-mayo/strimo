@@ -95,7 +95,7 @@ export default function Details() {
     try {
       const historyStr = localStorage.getItem('strimo_watch_history');
       let history = historyStr ? JSON.parse(historyStr) : [];
-      
+
       const newItemId = String(details.id || details.mal_id);
       const newItem = {
         id: newItemId,
@@ -239,7 +239,7 @@ export default function Details() {
           <div className="flex flex-wrap items-center gap-4">
             {type === 'series' && details.seasons && details.seasons.length > 0 && (
               <div className="relative" ref={seasonSelectRef}>
-                <div 
+                <div
                   onClick={() => {
                     setShowSeasonSelect(!showSeasonSelect);
                     setShowEpisodeSelect(false);
@@ -250,7 +250,7 @@ export default function Details() {
                   <ChevronDown size={14} className={`transition-transform duration-300 ${showSeasonSelect ? 'rotate-180 text-[#850203]' : 'text-white/40'}`} />
                 </div>
                 <div className={`absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden transition-all z-[60] py-1.5 ${showSeasonSelect ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
-                   <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
+                  <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
                     {details.seasons.map(s => (
                       <button
                         key={s.season_number}
@@ -263,14 +263,14 @@ export default function Details() {
                         Season {s.season_number}
                       </button>
                     ))}
-                   </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {list.length > 0 && (
               <div className="relative" ref={episodeSelectRef}>
-                <div 
+                <div
                   onClick={() => {
                     setShowEpisodeSelect(!showEpisodeSelect);
                     setShowSeasonSelect(false);
@@ -281,7 +281,7 @@ export default function Details() {
                   <ChevronDown size={14} className={`transition-transform duration-300 ${showEpisodeSelect ? 'rotate-180 text-[#850203]' : 'text-white/40'}`} />
                 </div>
                 <div className={`absolute top-full left-0 mt-2 w-48 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden transition-all z-[60] py-1.5 ${showEpisodeSelect ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
-                   <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
+                  <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
                     {list.map(ep => (
                       <button
                         key={ep.id || ep.number}
@@ -298,12 +298,12 @@ export default function Details() {
                         Episode {ep.number}
                       </button>
                     ))}
-                   </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
-          
+
           {type === 'anime' && totalEpisodePages > 1 && (
             <div className="flex gap-2 overflow-x-auto hide-scrollbar">
               {Array.from({ length: totalEpisodePages }).map((_, i) => {
@@ -313,9 +313,8 @@ export default function Details() {
                   <button
                     key={i}
                     onClick={() => setEpisodePage(i)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                      episodePage === i ? 'bg-[#850203] text-white' : 'bg-[#1a1515] text-white/60 hover:bg-white/10'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${episodePage === i ? 'bg-[#850203] text-white' : 'bg-[#1a1515] text-white/60 hover:bg-white/10'
+                      }`}
                   >
                     {startEp}-{endEp}
                   </button>
@@ -334,7 +333,7 @@ export default function Details() {
             </div>
           ) : (
             <>
-              <div 
+              <div
                 ref={episodeScrollRef}
                 className="flex gap-4 overflow-x-auto pb-6 mt-2 snap-x snap-mandatory hide-scrollbar relative scroll-smooth"
               >
@@ -357,42 +356,43 @@ export default function Details() {
                         }, 100);
                       }}
                     >
-                      <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-3">
+                      <div className="relative w-full aspect-video rounded-[1.5rem] overflow-hidden mb-3 border border-white/5 transition-all duration-700 group-hover:border-white/20 group-hover:shadow-2xl">
                         {ep.image ? (
-                          <ImageWithFallback src={ep.image} alt={ep.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                          <ImageWithFallback src={ep.image} alt={ep.name} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105" />
                         ) : (
-                          <div className="w-full h-full bg-[#1a1515] flex items-center justify-center">
+                          <div className="w-full h-full bg-[#1a1515] flex items-center justify-center transition-all duration-1000 group-hover:scale-105">
                             <AlertCircle size={24} className="text-white/10" />
                           </div>
                         )}
-                        
-                        <div className={`absolute inset-0 transition-all duration-300 pointer-events-none rounded-xl ${
-                          isActive 
-                            ? 'border-[2.5px] border-[#850203] shadow-[inset_0_0_15px_rgba(133,2,3,0.4)]' 
-                            : 'border border-white/5 group-hover:border-white/20'
-                        }`} />
-                        
-                        <div className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                          <Play className="text-white fill-white drop-shadow-lg" size={32} />
+
+                        <div className={`absolute inset-0 transition-all duration-300 pointer-events-none rounded-[1.5rem] ${isActive
+                            ? 'border-[2.5px] border-[#850203] shadow-[inset_0_0_15px_rgba(133,2,3,0.4)]'
+                            : ''
+                          }`} />
+
+                        <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black via-black/20 to-transparent transition-opacity duration-200 ${isActive ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'}`}>
+                          <div className={`w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform transition-transform duration-200 ${isActive ? 'scale-100' : 'scale-50 group-hover:scale-100'}`}>
+                            <Play className="text-white fill-white ml-1 drop-shadow-md" size={20} />
+                          </div>
                         </div>
-                        
+
                         {ep.filler && (
-                          <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full bg-red-500/90 text-white backdrop-blur-sm shadow-md font-bold tracking-wider">
+                          <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-[#ff1a1c]/90 text-white backdrop-blur-sm shadow-md font-bold tracking-wider">
                             FILLER
                           </span>
                         )}
                       </div>
-                      
-                      <div className="px-1">
+
+                      <div className="px-1 transform transition-transform duration-700">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className={`font-semibold text-sm ${isActive ? 'text-[#850203]' : 'text-white/70'}`}>
+                          <span className={`font-semibold text-sm transition-colors ${isActive ? 'text-[#ff1a1c]' : 'text-white/70 group-hover:text-[#ff1a1c]'}`}>
                             {ep.number}.
                           </span>
-                          <h4 className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-white/90'}`} title={ep.name}>
+                          <h4 className={`font-semibold text-sm truncate transition-colors ${isActive ? 'text-[#ff1a1c]' : 'text-white/90 group-hover:text-[#ff1a1c]'}`} title={ep.name}>
                             {ep.name || `Episode ${ep.number}`}
                           </h4>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-white/40 font-medium">
+                        <div className="flex items-center gap-3 text-xs text-white/40 font-medium opacity-70 group-hover:opacity-100 transition-opacity duration-700">
                           {ep.runtime && <span>{ep.runtime}m</span>}
                           {ep.rating ? <span>★ {Math.round(ep.rating * 10) / 10}</span> : null}
                         </div>
@@ -403,13 +403,13 @@ export default function Details() {
               </div>
 
               {/* Episode Scroll Buttons */}
-              <button 
+              <button
                 onClick={() => scrollEpisodes('left')}
                 className="absolute left-0 top-[40%] -translate-y-1/2 -translate-x-4 w-10 h-10 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/episode-section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
               >
                 <ChevronLeft size={24} />
               </button>
-              <button 
+              <button
                 onClick={() => scrollEpisodes('right')}
                 className="absolute right-0 top-[40%] -translate-y-1/2 translate-x-4 w-10 h-10 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center opacity-0 group-hover/episode-section:opacity-100 transition-all shadow-xl z-10 hover:scale-110 active:scale-95"
               >
@@ -445,11 +445,11 @@ export default function Details() {
                 </span>
               )}
             </div>
-            
+
             <h1 className="text-2xl sm:text-3xl lg:text-5xl font-semibold uppercase tracking-widest leading-tight mb-3 text-white drop-shadow-xl">
               {details.title}
             </h1>
-            
+
             <div className="flex items-center gap-4 flex-wrap text-sm mb-4 font-medium text-white/90">
               {details.rating && (
                 <span className="flex items-center gap-1.5 text-[#f5c518] font-semibold drop-shadow-md">
@@ -564,13 +564,13 @@ export default function Details() {
         {showTrailer && details.trailer && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 lg:p-20 backdrop-blur-md animate-in fade-in duration-200" onClick={() => setShowTrailer(false)}>
             <div className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-              <iframe 
-                src={details.trailer} 
-                title="Trailer" 
-                allowFullScreen 
-                allow="autoplay; fullscreen" 
+              <iframe
+                src={details.trailer}
+                title="Trailer"
+                allowFullScreen
+                allow="autoplay; fullscreen"
                 sandbox="allow-scripts allow-same-origin"
-                className="w-full h-full border-none" 
+                className="w-full h-full border-none"
               />
               <button onClick={() => setShowTrailer(false)} className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-[#850203] text-white rounded-full backdrop-blur-md transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -585,25 +585,29 @@ export default function Details() {
           <h2 className="text-2xl text-white tracking-wide font-semibold">More Like This</h2>
           <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
             {details.recommendations.filter(i => i.image).map((item) => (
-              <Link key={item.id} to={buildLink(item)} className="flex-none w-[200px] sm:w-[240px] h-[140px] sm:h-[160px] bg-[#1a1515] rounded-[20px] overflow-hidden snap-start relative group border border-white/5">
-                <ImageWithFallback src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-3">
-                  <p className="text-white font-semibold text-xs leading-tight truncate">{item.title}</p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {item.rating && <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5"><Star size={8} fill="#f5c518" stroke="#f5c518" />{item.rating}</span>}
-                    <span className="text-white/40 text-[10px]">{item.year}</span>
+              <Link key={item.id} to={buildLink(item)} className="flex-none w-[200px] sm:w-[240px] h-[140px] sm:h-[160px] bg-[#1a1515] rounded-[20px] overflow-hidden snap-start relative group border border-white/5 transition-all duration-700 hover:border-white/20">
+                <ImageWithFallback src={item.image} alt={item.title} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-4">
+                   <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                    <p className="text-white font-bold text-xs leading-tight truncate transition-colors duration-700 group-hover:text-[#ff1a1c]">{item.title}</p>
+                    <div className="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                      {item.rating && <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5"><Star size={8} fill="#f5c518" stroke="#f5c518" />{item.rating}</span>}
+                      <span className="text-white/40 text-[10px]">{item.year}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Play className="text-white fill-white" size={36} /></div>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
+                   <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-200">
+                      <Play className="text-white fill-white ml-1 drop-shadow-md" size={20} />
+                   </div>
+                </div>
               </Link>
             ))}
           </div>
         </div>
       )}
 
-      <footer className="text-center py-8 text-white/30 text-sm border-t border-white/5">
-        <p>Strimo — Powered by TMDB, TVMaze, Jikan & OMDb</p>
-      </footer>
+
     </div>
   );
 }

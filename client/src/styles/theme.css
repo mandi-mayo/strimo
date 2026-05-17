@@ -53,7 +53,7 @@
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     background-color: #0a0808;
-    background-image: 
+    background-image:
       radial-gradient(circle at center, rgba(133, 2, 3, 0.05) 0%, rgba(10, 8, 8, 0.9) 100%),
       url('../assets/bg.jpg');
     background-size: cover;
@@ -62,7 +62,12 @@
     background-repeat: no-repeat;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 600;
     letter-spacing: -0.01em;
   }
@@ -73,15 +78,21 @@
   }
 
   @media (max-width: 640px) {
-    :root { --font-size: 14px; }
+    :root {
+      --font-size: 14px;
+    }
   }
 
   @media (min-width: 1440px) {
-    :root { --font-size: 18px; }
+    :root {
+      --font-size: 18px;
+    }
   }
 
   @media (min-width: 1920px) {
-    :root { --font-size: 20px; }
+    :root {
+      --font-size: 20px;
+    }
   }
 }
 
@@ -90,6 +101,7 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -160,7 +172,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Season/Episode picker */
@@ -258,7 +272,10 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.cast-grid::-webkit-scrollbar { display: none; }
+
+.cast-grid::-webkit-scrollbar {
+  display: none;
+}
 
 .cast-card {
   flex: 0 0 100px;
@@ -320,10 +337,21 @@
   font-weight: 600;
 }
 
-.rating-badge.imdb { background: rgba(245, 197, 24, 0.15); }
-.rating-badge.imdb .value { color: #f5c518; }
-.rating-badge.rt { background: rgba(255, 80, 80, 0.15); }
-.rating-badge.mc { background: rgba(102, 204, 51, 0.15); }
+.rating-badge.imdb {
+  background: rgba(245, 197, 24, 0.15);
+}
+
+.rating-badge.imdb .value {
+  color: #f5c518;
+}
+
+.rating-badge.rt {
+  background: rgba(255, 80, 80, 0.15);
+}
+
+.rating-badge.mc {
+  background: rgba(102, 204, 51, 0.15);
+}
 
 /* Tags */
 .tags-row {
@@ -348,6 +376,7 @@
   border-color: rgba(133, 2, 3, 0.3);
   font-weight: 500;
 }
+
 /* Cinematic Player Enhancements */
 .cinematic-shadow {
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(133, 2, 3, 0.1);

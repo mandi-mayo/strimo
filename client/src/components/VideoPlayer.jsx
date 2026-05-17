@@ -15,7 +15,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   const [resolvedStream, setResolvedStream] = useState(null);
   const [subtitles, setSubtitles] = useState([]);
   const [useCinematic, setUseCinematic] = useState(false);
-  
+
   const iframeRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -26,7 +26,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   useEffect(() => {
     const resolveSource = async () => {
       if (!currentSource) return;
-      
+
       setIsLoading(true);
       setResolvedStream(null);
       setSubtitles([]);
@@ -36,7 +36,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
         try {
           const { id, type, season, episode } = mediaInfo;
           const res = await api.get(`/resolve/vidlink?id=${id}&type=${type}&season=${season}&episode=${episode}`);
-          
+
           if (res.data && res.data.stream) {
             setResolvedStream(res.data.stream);
             if (res.data.subtitles) {
@@ -55,7 +55,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
       } else {
         setUseCinematic(false);
       }
-      
+
       setIsLoading(false);
     };
 
@@ -105,7 +105,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
           </div>
           <span className="text-white/60 text-sm font-medium hidden sm:inline">Source:</span>
         </div>
-        
+
         <div className="relative flex-1 sm:flex-none" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -123,7 +123,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
           {/* Dropdown Menu */}
           {isDropdownOpen && (
             <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-[#292323] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[60] animate-in fade-in slide-in-from-top-4 duration-300">
-              <div className="p-2 flex flex-col gap-1 max-h-[350px] overflow-y-auto hide-scrollbar">
+              <div className="p-2 flex flex-col gap-1 max-h-[350px] overflow-y-scroll hide-scrollbar">
                 <div className="px-3 py-2 text-[10px] font-bold text-white/30 uppercase tracking-widest">Available Servers</div>
                 {validSources.map((source, idx) => {
                   const isSelected = idx === currentSourceIndex;
@@ -132,11 +132,10 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
                     <button
                       key={idx}
                       onClick={() => handleSourceChange(idx)}
-                      className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm text-left transition-all duration-200 ${
-                        isSelected 
-                          ? 'bg-[#850203] text-white font-semibold shadow-lg shadow-[#850203]/20' 
+                      className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm text-left transition-all duration-200 ${isSelected
+                          ? 'bg-[#850203] text-white font-semibold shadow-lg shadow-[#850203]/20'
                           : 'text-white/70 hover:bg-white/5 hover:text-white'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 truncate">
                         <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white animate-pulse' : 'bg-white/20'}`} />
