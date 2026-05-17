@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar.jsx';
 import SearchModal from './SearchModal.jsx';
@@ -6,6 +6,12 @@ import { isSafeUrl } from '../utils/security';
 
 export default function Layout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const location = useLocation();
+
+  // Close search modal when route changes
+  useEffect(() => {
+    setIsSearchOpen(false);
+  }, [location.pathname]);
 
   // Global Redirect / External Link Guard
   useEffect(() => {
@@ -29,7 +35,7 @@ export default function Layout() {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-transparent text-white overflow-x-hidden" style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <Sidebar onOpenSearch={() => setIsSearchOpen(true)} />
+      <Sidebar onOpenSearch={() => setIsSearchOpen(true)} isSearchOpen={isSearchOpen} />
       
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 relative pt-24 lg:pt-0 pb-6 lg:pb-0">

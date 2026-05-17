@@ -246,6 +246,35 @@ app.get('/api/discover/:genreId', async (req, res) => {
     }
 });
 
+// Helper: Levenshtein distance for fuzzy matching
+function getLevenshteinDistance(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1, // substitution
+                    matrix[i][j - 1] + 1,     // insertion
+                    matrix[i - 1][j] + 1      // deletion
+                );
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
 // Helper: Rank search results by relevance
 function rankSearchResults(results, query) {
     const queryLower = query.toLowerCase().trim();
@@ -273,15 +302,21 @@ function rankSearchResults(results, query) {
         if (aTitle.includes(queryLower)) scoreA += 100;
         if (bTitle.includes(queryLower)) scoreB += 100;
 
-        // 5. Boost by rating (if available)
+        // 5. Fuzzy match (Typo Tolerance)
+        const distA = getLevenshteinDistance(aTitle, queryLower);
+        const distB = getLevenshteinDistance(bTitle, queryLower);
+        if (distA <= 2) scoreA += (3 - distA) * 150; // Boost small typos
+        if (distB <= 2) scoreB += (3 - distB) * 150;
+
+        // 6. Boost by rating (if available)
         if (a.rating) scoreA += (a.rating / 10) * 50;
         if (b.rating) scoreB += (b.rating / 10) * 50;
 
-        // 6. Boost by popularity (if available)
+        // 7. Boost by popularity (if available)
         if (a.popularity) scoreA += Math.min(a.popularity / 10, 50);
         if (b.popularity) scoreB += Math.min(b.popularity / 10, 50);
 
-        // 7. Tie-breaker: more recent content
+        // 8. Tie-breaker: more recent content
         const yearA = parseInt(a.year) || 0;
         const yearB = parseInt(b.year) || 0;
         if (yearA !== yearB) scoreA += (yearA - yearB) * 2;

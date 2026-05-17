@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
-export default function Sidebar({ onOpenSearch }) {
+export default function Sidebar({ onOpenSearch, isSearchOpen }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const location = useLocation();
 
@@ -70,13 +70,13 @@ export default function Sidebar({ onOpenSearch }) {
       <div className="lg:hidden fixed top-4 left-4 right-4 h-16 bg-[#1a1717]/80 backdrop-blur-3xl border border-white/10 rounded-2xl z-[150] flex items-center px-5 justify-between shadow-2xl">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
-            <img src="/logo.svg" alt="s" className="w-full h-full object-contain" />
+            <img src="/logo_final.svg" alt="s" className="w-full h-full object-contain" />
           </div>
           <div className="flex items-center">
             <img src="/strimo-text.svg" alt="strimo" className="h-6 w-auto object-contain" />
           </div>
         </Link>
-        
+
         <div className="flex items-center gap-3">
           <Link
             to="/"
@@ -87,12 +87,14 @@ export default function Sidebar({ onOpenSearch }) {
           >
             <Home size={22} strokeWidth={location.pathname === '/' ? 2.5 : 1.5} />
           </Link>
-          <button
-            onClick={onOpenSearch}
-            className="p-2.5 rounded-xl text-white/40 active:text-white transition-all hover:text-white/80 hover:bg-white/5"
-          >
-            <Search size={22} strokeWidth={1.5} />
-          </button>
+          {!isSearchOpen && (
+            <button
+              onClick={onOpenSearch}
+              className="p-2.5 rounded-xl text-white/40 active:text-white transition-all hover:text-white/80 hover:bg-white/5"
+            >
+              <Search size={22} strokeWidth={1.5} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -112,7 +114,7 @@ export default function Sidebar({ onOpenSearch }) {
           )}>
             <Link to="/" className="flex items-center gap-3 group">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-110 shrink-0">
-                <img src="/logo.svg" alt="Strimo" className="w-full h-full object-contain" />
+                <img src="/logo_final.svg" alt="Strimo" className="w-full h-full object-contain" />
               </div>
               {isExpanded && (
                 <div className="flex items-center animate-in fade-in slide-in-from-left-4 duration-700">
@@ -143,22 +145,24 @@ export default function Sidebar({ onOpenSearch }) {
             "mb-8 transition-all duration-500",
             isExpanded ? "px-6" : "px-4"
           )}>
-            <button
-              onClick={onOpenSearch}
-              className={clsx(
-                "flex items-center bg-[#1a1717] hover:bg-[#221f1f] border border-white/5 rounded-2xl text-[#e1dcd8]/30 transition-all duration-300 group overflow-hidden",
-                isExpanded ? "w-full gap-3 px-4 py-3.5" : "w-12 h-12 justify-center p-0"
-              )}
+            {!isSearchOpen && (
+              <button
+                onClick={onOpenSearch}
+                className={clsx(
+                  "flex items-center bg-[#1a1717] hover:bg-[#221f1f] border border-white/5 rounded-2xl text-[#e1dcd8]/30 transition-all duration-300 group overflow-hidden",
+                  isExpanded ? "w-full gap-3 px-4 py-3.5" : "w-12 h-12 justify-center p-0"
+                )}
 
-            >
-              <Search size={18} className="group-hover:text-white/60 transition-colors shrink-0" />
-              {isExpanded && (
-                <>
-                  <span className="flex-1 text-left text-sm font-medium group-hover:text-white/60 transition-colors whitespace-nowrap">Search...</span>
+              >
+                <Search size={18} className="group-hover:text-white/60 transition-colors shrink-0" />
+                {isExpanded && (
+                  <>
+                    <span className="flex-1 text-left text-sm font-medium group-hover:text-white/60 transition-colors whitespace-nowrap">Search...</span>
 
-                </>
-              )}
-            </button>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Navigation Sections */}

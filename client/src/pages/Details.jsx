@@ -516,19 +516,17 @@ export default function Details() {
 
       <div className="w-full flex flex-col gap-10">
         {videoSources.length > 0 && (
-          <div id="player" className="w-full mt-4 scroll-mt-8">
-            <div className="rounded-[25px] overflow-hidden shadow-2xl">
-              <VideoPlayer
-                sources={videoSources}
-                title={details.title}
-                mediaInfo={{
-                  id: details.tmdb_id || details.id,
-                  type: type,
-                  season: currentSeason,
-                  episode: currentEpisode
-                }}
-              />
-            </div>
+          <div id="player" className="w-full mt-8 sm:mt-12 scroll-mt-24">
+            <VideoPlayer
+              sources={videoSources}
+              title={details.title}
+              mediaInfo={{
+                id: details.tmdb_id || details.id,
+                type: type,
+                season: currentSeason,
+                episode: currentEpisode
+              }}
+            />
             {(type === 'series' || type === 'anime') && (
               <div className="mt-8">
                 <h2 className="text-2xl text-white tracking-wide font-semibold mb-2">

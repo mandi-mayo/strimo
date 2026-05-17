@@ -15,7 +15,7 @@ export default function SearchModal({ isOpen, onClose }) {
   // Debounce hook
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    const timer = setTimeout(() => setDebouncedQuery(query), 150);
     return () => clearTimeout(timer);
   }, [query]);
 
