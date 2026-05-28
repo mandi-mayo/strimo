@@ -22,7 +22,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   const validSources = sources.filter(s => s?.url && typeof s.url === 'string');
   const currentSource = validSources[currentSourceIndex];
 
-  // Attempt to resolve direct stream for VidLink
+  // Attempt to resolve direct stream for VidLink only
   useEffect(() => {
     const resolveSource = async () => {
       if (!currentSource) return;
@@ -49,7 +49,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
             setUseCinematic(true);
           }
         } catch (error) {
-          if (debug) console.error('[VideoPlayer] Failed to resolve Cinematic stream, falling back to iframe');
+          if (debug) console.error('[VideoPlayer] Failed to resolve VidLink stream, falling back to iframe');
           setUseCinematic(false);
         }
       } else {
@@ -61,6 +61,19 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
 
     resolveSource();
   }, [currentSourceIndex, mediaInfo, currentSource, debug]);
+
+  // Build proxied URL — routes embed through server which strips ad/redirect scripts
+  const proxiedUrl = useCallback((url) => {
+    if (!url) return url;
+    return `/api/proxy/embed?url=${encodeURIComponent(url)}`;
+  }, []);
+
+  // Last-resort: kill window.open on the parent frame too
+  useEffect(() => {
+    const orig = window.open;
+    window.open = () => null;
+    return () => { window.open = orig; };
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -97,10 +110,10 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
 
   return (
     <div className="relative w-full flex flex-col rounded-[2rem] overflow-hidden bg-black shadow-[0_0_40px_rgba(0,0,0,0.6)] border border-white/10 group transition-all duration-500 hover:shadow-[0_0_60px_rgba(229,9,20,0.15)] ring-1 ring-white/5">
-      
+
       {/* Sleek Glassmorphic Header */}
       <div className="relative z-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 sm:px-8 py-4 sm:py-5 bg-gradient-to-b from-[#110e0e] to-black/95 border-b border-white/5">
-        
+
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-[#e50914]/10 flex items-center justify-center border border-[#e50914]/20 shadow-[0_0_15px_rgba(229,9,20,0.2)]">
             <Server size={18} className="text-[#e50914]" />
@@ -128,8 +141,8 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
                           key={idx}
                           onClick={() => handleSourceChange(idx)}
                           className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm transition-all duration-300 ${isSelected
-                              ? 'bg-[#e50914] text-white font-bold shadow-lg shadow-[#e50914]/30'
-                              : 'text-white/60 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[#e50914] text-white font-bold shadow-lg shadow-[#e50914]/30'
+                            : 'text-white/60 hover:bg-white/10 hover:text-white'
                             }`}
                         >
                           <div className="flex items-center gap-3 truncate">
@@ -176,7 +189,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
               <Play className="text-[#e50914] fill-[#e50914] ml-1 opacity-50" size={24} />
             </div>
           </div>
-          <h3 className="text-white text-lg font-medium tracking-wide mb-2 animate-pulse">Initializing Secure Sandbox</h3>
+          <h3 className="text-white text-lg font-medium tracking-wide mb-2 animate-pulse">Initializing Stream</h3>
           <p className="text-white/30 text-xs uppercase tracking-[0.3em] font-medium">Connecting to {currentSource?.name}</p>
         </div>
 
@@ -193,11 +206,10 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
             currentSource && (
               <iframe
                 ref={iframeRef}
-                src={currentSource.url}
+                src={proxiedUrl(currentSource.url)}
                 title={`${title} - ${currentSource.name}`}
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                sandbox="allow-forms allow-scripts allow-same-origin allow-presentation allow-pointer-lock"
                 onLoad={handleIframeLoad}
                 onError={handleIframeError}
                 className="w-full h-full border-none pointer-events-auto bg-black"

@@ -159,13 +159,31 @@ export default function Details() {
 
     if (type === 'anime') {
       if (malId) {
-        sources.push({ name: '🎬 VidLink PRO', url: `https://vidlink.pro/anime/${malId}/${currentEpisode}`, priority: 1 });
-        sources.push({ name: '📺 VidSrc PM', url: `https://vidsrc.pm/embed/anime/${malId}/${currentEpisode}`, priority: 2 });
+        sources.push({ name: '📺 VidSrc PM', url: `https://vidsrc.pm/embed/anime/${malId}/${currentEpisode}`, priority: 1 });
+        sources.push({ name: '⚡ VidFast', url: `https://vidfast.pro/tv/${tmdbId || malId}/${currentSeason || 1}/${currentEpisode}`, priority: 3 });
+        sources.push({
+          name: '🌐 VidSrc ME',
+          url: imdbId
+            ? `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${currentSeason || 1}&episode=${currentEpisode}`
+            : `https://vidsrc-embed.su/embed/tv?tmdb=${tmdbId || ''}&season=${currentSeason || 1}&episode=${currentEpisode}`,
+          priority: 4
+        });
+        sources.push({
+          name: '🌐 VidSrc ME 2',
+          url: imdbId
+            ? `https://vidsrcme.su/embed/tv?imdb=${imdbId}&season=${currentSeason || 1}&episode=${currentEpisode}`
+            : `https://vidsrcme.su/embed/tv?tmdb=${tmdbId || ''}&season=${currentSeason || 1}&episode=${currentEpisode}`,
+          priority: 5
+        });
+        sources.push({
+          name: '🌐 VidSrc ME 3',
+          url: imdbId
+            ? `https://vsrc.su/embed/tv?imdb=${imdbId}&season=${currentSeason || 1}&episode=${currentEpisode}`
+            : `https://vsrc.su/embed/tv?tmdb=${tmdbId || ''}&season=${currentSeason || 1}&episode=${currentEpisode}`,
+          priority: 6
+        });
       }
     } else if (type === 'series') {
-      if (tmdbId) {
-        sources.push({ name: '🎬 VidLink PRO', url: `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`, priority: 2 });
-      }
       sources.push({
         name: '📺 VidSrc PM',
         url: imdbId
@@ -174,22 +192,60 @@ export default function Details() {
         priority: 1
       });
       if (tmdbId) {
-        sources.push({ name: '📽️ AutoEmbed', url: `https://autoembed.to/tv/tmdb/${tmdbId}-${currentSeason}-${currentEpisode}`, priority: 3 });
-        sources.push({ name: '🎞️ VidSrc XYZ', url: `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`, priority: 4 });
-        sources.push({ name: '🌐 MultiEmbed', url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${currentSeason}&e=${currentEpisode}`, priority: 5 });
+        sources.push({ name: '⚡ VidFast', url: `https://vidfast.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`, priority: 3 });
       }
+      sources.push({
+        name: '🌐 VidSrc ME',
+        url: imdbId
+          ? `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
+          : `https://vidsrc-embed.su/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
+        priority: 4
+      });
+      sources.push({
+        name: '🌐 VidSrc ME 2',
+        url: imdbId
+          ? `https://vidsrcme.su/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
+          : `https://vidsrcme.su/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
+        priority: 5
+      });
+      sources.push({
+        name: '🌐 VidSrc ME 3',
+        url: imdbId
+          ? `https://vsrc.su/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
+          : `https://vsrc.su/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
+        priority: 6
+      });
     } else {
-      sources.push({ name: '🎬 VidLink PRO', url: `https://vidlink.pro/movie/${mediaId}`, priority: 2 });
+      // Movies
       sources.push({
         name: '📺 VidSrc PM',
         url: imdbId ? `https://vidsrc.pm/embed/movie?imdb=${imdbId}` : `https://vidsrc.pm/embed/movie?tmdb=${tmdbId}`,
         priority: 1
       });
       if (tmdbId) {
-        sources.push({ name: '📽️ AutoEmbed', url: `https://autoembed.to/movie/tmdb/${tmdbId}`, priority: 3 });
-        sources.push({ name: '🎞️ VidSrc XYZ', url: `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`, priority: 4 });
-        sources.push({ name: '🌐 MultiEmbed', url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`, priority: 5 });
+        sources.push({ name: '⚡ VidFast', url: `https://vidfast.pro/movie/${tmdbId}`, priority: 3 });
       }
+      sources.push({
+        name: '🌐 VidSrc ME',
+        url: imdbId
+          ? `https://vidsrc-embed.su/embed/movie?imdb=${imdbId}`
+          : `https://vidsrc-embed.su/embed/movie?tmdb=${tmdbId}`,
+        priority: 4
+      });
+      sources.push({
+        name: '🌐 VidSrc ME 2',
+        url: imdbId
+          ? `https://vidsrcme.su/embed/movie?imdb=${imdbId}`
+          : `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}`,
+        priority: 5
+      });
+      sources.push({
+        name: '🌐 VidSrc ME 3',
+        url: imdbId
+          ? `https://vsrc.su/embed/movie?imdb=${imdbId}`
+          : `https://vsrc.su/embed/movie?tmdb=${tmdbId}`,
+        priority: 6
+      });
     }
 
     return sources.sort((a, b) => a.priority - b.priority);
@@ -366,8 +422,8 @@ export default function Details() {
                         )}
 
                         <div className={`absolute inset-0 transition-all duration-300 pointer-events-none rounded-[1.5rem] ${isActive
-                            ? 'border-[2.5px] border-[#850203] shadow-[inset_0_0_15px_rgba(133,2,3,0.4)]'
-                            : ''
+                          ? 'border-[2.5px] border-[#850203] shadow-[inset_0_0_15px_rgba(133,2,3,0.4)]'
+                          : ''
                           }`} />
 
                         <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black via-black/20 to-transparent transition-opacity duration-200 ${isActive ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'}`}>
@@ -586,7 +642,7 @@ export default function Details() {
               <Link key={item.id} to={buildLink(item)} className="flex-none w-[200px] sm:w-[240px] h-[140px] sm:h-[160px] bg-[#1a1515] rounded-[20px] overflow-hidden snap-start relative group border border-white/5 transition-all duration-700 hover:border-white/20">
                 <ImageWithFallback src={item.image} alt={item.title} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-4">
-                   <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                  <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
                     <p className="text-white font-bold text-xs leading-tight truncate transition-colors duration-700 group-hover:text-[#ff1a1c]">{item.title}</p>
                     <div className="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
                       {item.rating && <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5"><Star size={8} fill="#f5c518" stroke="#f5c518" />{item.rating}</span>}
@@ -595,9 +651,9 @@ export default function Details() {
                   </div>
                 </div>
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
-                   <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-200">
-                      <Play className="text-white fill-white ml-1 drop-shadow-md" size={20} />
-                   </div>
+                  <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl transform scale-50 group-hover:scale-100 transition-transform duration-200">
+                    <Play className="text-white fill-white ml-1 drop-shadow-md" size={20} />
+                  </div>
                 </div>
               </Link>
             ))}

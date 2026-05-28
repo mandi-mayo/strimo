@@ -31,6 +31,135 @@ app.get('/api/proxy/subtitle', async (req, res) => {
 });
 
 
+// ============================================================
+// EMBED PROXY — fetches embed pages server-side, strips ad/redirect scripts
+// ============================================================
+
+// Patterns that indicate ad/redirect scripts — matched against src and inline content
+const AD_SCRIPT_PATTERNS = [
+    /popunder/i, /pop-under/i, /popad/i, /popads/i,
+    /adnxs/i, /doubleclick/i, /googlesyndication/i,
+    /trafficjunky/i, /exoclick/i, /juicyads/i, /hilltopads/i,
+    /propellerads/i, /adsterra/i, /monetag/i, /bidvertiser/i,
+    /revcontent/i, /taboola/i, /outbrain/i,
+    /window\.open\s*\(/i,
+    /window\.location\s*=/i,
+    /top\.location\s*=/i,
+    /parent\.location\s*=/i,
+    /document\.location\s*=/i,
+    /\.href\s*=\s*['"`]https?/i,
+    /setTimeout.*window\.open/i,
+    /setInterval.*window\.open/i,
+];
+
+const shouldStripScript = (src, inlineContent = '') => {
+    const target = src || inlineContent;
+    return AD_SCRIPT_PATTERNS.some(p => p.test(target));
+};
+
+// Rewrite all relative URLs in HTML to absolute based on origin
+const rewriteUrls = (html, origin) => {
+    const base = new URL(origin);
+    const baseUrl = `${base.protocol}//${base.host}`;
+
+    // Fix src/href attributes that are root-relative or relative
+    return html
+        .replace(/(src|href|action)=(["'])\/\//g, `$1=$2${base.protocol}//`)
+        .replace(/(src|href|action)=(["'])\//g, `$1=$2${baseUrl}/`)
+        .replace(/(src|href|action)=(["'])(?!http|\/\/|data:|blob:|#|javascript)/g,
+            `$1=$2${baseUrl}/`);
+};
+
+// Strip <script> tags matching ad patterns (both src= and inline)
+const stripAdScripts = (html) => {
+    // Strip external scripts with ad src
+    html = html.replace(/<script[^>]+src=(["'])([^"']*)\1[^>]*>[\s\S]*?<\/script>/gi, (match, q, src) => {
+        return shouldStripScript(src) ? '<!-- ad script removed -->' : match;
+    });
+    // Strip inline scripts containing redirect/ad code
+    html = html.replace(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/gi, (match, code) => {
+        return shouldStripScript('', code) ? '<!-- ad script removed -->' : match;
+    });
+    return html;
+};
+
+// Inject a script into the proxied page that locks navigation
+const LOCK_SCRIPT = `
+<script>
+(function() {
+  // Kill popups
+  window.open = function() { return null; };
+  // Block top/parent navigation
+  try {
+    Object.defineProperty(window, 'top', { get: function() { return window; } });
+    Object.defineProperty(window, 'parent', { get: function() { return window; } });
+  } catch(e) {}
+  // Intercept location assignments
+  const locProps = ['href', 'assign', 'replace'];
+  locProps.forEach(function(p) {
+    try {
+      Object.defineProperty(location, p, {
+        set: function() {},
+        get: function() { return p === 'href' ? location.href : function(){}; },
+        configurable: true
+      });
+    } catch(e) {}
+  });
+})();
+</script>
+`;
+
+app.get('/api/proxy/embed', async (req, res) => {
+    const { url } = req.query;
+    if (!url) return res.status(400).send('URL required');
+
+    // Only allow known embed providers
+    const ALLOWED_HOSTS = [
+        'vidsrc.pm', 'vidsrc-embed.su', 'vidsrcme.su', 'vsrc.su',
+        'vidfast.pro', 'vidsrc.xyz', 'vidsrc.fyi', 'vidsrc.cc',
+    ];
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(url);
+    } catch {
+        return res.status(400).send('Invalid URL');
+    }
+    const host = parsedUrl.hostname.replace(/^www\./, '');
+    if (!ALLOWED_HOSTS.some(h => host === h || host.endsWith('.' + h))) {
+        return res.status(403).send('Host not allowed');
+    }
+
+    try {
+        const response = await axios.get(url, {
+            httpsAgent,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'Referer': parsedUrl.origin,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            },
+            responseType: 'text',
+            maxRedirects: 5,
+        });
+
+        let html = response.data;
+        html = rewriteUrls(html, url);
+        html = stripAdScripts(html);
+        // Inject lock script right after <head> or at top
+        html = html.replace(/(<head[^>]*>)/i, `$1${LOCK_SCRIPT}`);
+        if (!html.includes('<!-- lock injected -->')) {
+            html = LOCK_SCRIPT + html;
+        }
+
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('X-Frame-Options', 'SAMEORIGIN');
+        res.send(html);
+    } catch (error) {
+        console.error('[EmbedProxy] Error:', error.message);
+        res.status(502).send('Failed to fetch embed');
+    }
+});
+
 const TMDB_KEY = process.env.TMDB_API_KEY;
 const OMDB_KEY = process.env.OMDB_API_KEY;
 const TMDB_BASE = 'https://api.tmdb.org/3';

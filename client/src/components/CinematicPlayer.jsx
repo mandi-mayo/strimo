@@ -6,19 +6,25 @@ import Hls from 'hls.js';
  * CinematicPlayer - A premium video player using Artplayer
  * Optimized for Strimo with advanced subtitle controls
  */
-const CinematicPlayer = ({ 
-    url, 
-    subtitles = [], 
-    title = '', 
+const CinematicPlayer = ({
+    url,
+    subtitles = [],
+    title = '',
     poster = '',
-    onReady = () => {},
-    className = '' 
+    onReady = () => { },
+    className = ''
 }) => {
     const artRef = useRef(null);
     const playerInstance = useRef(null);
 
     useEffect(() => {
         if (!artRef.current) return;
+
+        // Destroy any existing instance before re-initializing
+        if (playerInstance.current && playerInstance.current.destroy) {
+            playerInstance.current.destroy(false);
+            playerInstance.current = null;
+        }
 
         // Initialize Artplayer
         const art = new Artplayer({
@@ -156,8 +162,8 @@ const CinematicPlayer = ({
     }, [url, subtitles, title, poster]);
 
     return (
-        <div 
-            ref={artRef} 
+        <div
+            ref={artRef}
             className={`artplayer-app cinematic-shadow ${className}`}
             style={{ width: '100%', height: '100%' }}
         />
