@@ -50,6 +50,7 @@ const AD_SCRIPT_PATTERNS = [
     /\.href\s*=\s*['"`]https?/i,
     /setTimeout.*window\.open/i,
     /setInterval.*window\.open/i,
+    /disable-devtool/i,
 ];
 
 const shouldStripScript = (src, inlineContent = '') => {
