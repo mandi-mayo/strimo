@@ -152,7 +152,8 @@ app.get('/api/proxy/embed', async (req, res) => {
 
         res.set('Content-Type', 'text/html; charset=utf-8');
         res.set('Access-Control-Allow-Origin', '*');
-        res.set('X-Frame-Options', 'SAMEORIGIN');
+        // Allow cross-origin framing for separated client/server deployments
+        res.removeHeader('X-Frame-Options');
         res.send(html);
     } catch (error) {
         console.error('[EmbedProxy] Error:', error.message);
