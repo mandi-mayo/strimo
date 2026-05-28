@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { AlertCircle, Server, ChevronDown, Settings, Clock, Languages, Play } from 'lucide-react';
+import { AlertCircle, Server, ChevronDown, Settings, Languages, Play } from 'lucide-react';
 import CinematicPlayer from './CinematicPlayer';
 import api from '../api';
 
@@ -119,7 +119,6 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
             <Server size={18} className="text-[#e50914]" />
           </div>
           <div className="flex flex-col">
-            <span className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5">Streaming Server</span>
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -162,20 +161,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
           </div>
         </div>
 
-        {/* Premium Status Tags */}
-        <div className="flex items-center gap-3 ml-auto">
-          {useCinematic ? (
-            <div className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-[#e50914]/20 to-[#850203]/20 rounded-full border border-[#e50914]/30 shadow-[0_0_15px_rgba(229,9,20,0.15)]">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#e50914] animate-pulse" />
-              <span className="text-[10px] text-white font-bold uppercase tracking-widest">Cinematic Player</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-full border border-white/5 backdrop-blur-md">
-              <Clock size={12} className="text-white/40" />
-              <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Standard Player</span>
-            </div>
-          )}
-        </div>
+
       </div>
 
       {/* Player Container */}
