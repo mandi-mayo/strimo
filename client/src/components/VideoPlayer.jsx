@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { AlertCircle, Server, ChevronDown, Settings, Languages, Play } from 'lucide-react';
 import CinematicPlayer from './CinematicPlayer';
-import api from '../api';
+import api, { API_BASE_URL } from '../api';
 
 /**
  * VideoPlayer - Advanced streaming player with Cinematic UI
@@ -65,7 +65,8 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   // Build proxied URL — routes embed through server which strips ad/redirect scripts
   const proxiedUrl = useCallback((url) => {
     if (!url) return url;
-    return `/api/proxy/embed?url=${encodeURIComponent(url)}`;
+    const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+    return `${base}/proxy/embed?url=${encodeURIComponent(url)}`;
   }, []);
 
   // Last-resort: kill window.open on the parent frame too
