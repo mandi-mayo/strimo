@@ -1,0 +1,38 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - link "Strimo strimo" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img "Strimo" [ref=e9]
+      - img "strimo" [ref=e11]
+    - button "Collapse Sidebar" [ref=e13] [cursor=pointer]:
+      - img [ref=e14]
+    - button "Search..." [ref=e17]:
+      - img [ref=e18]
+      - generic [ref=e21]: Search...
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - heading "Browse" [level=3] [ref=e24]
+        - generic [ref=e25]:
+          - link "Home" [ref=e26] [cursor=pointer]:
+            - /url: /
+            - img [ref=e28]
+            - generic [ref=e31]: Home
+          - link "Movies" [ref=e32] [cursor=pointer]:
+            - /url: /discover/movie
+            - img [ref=e33]
+            - generic [ref=e35]: Movies
+          - link "TV Shows" [ref=e36] [cursor=pointer]:
+            - /url: /discover/tv
+            - img [ref=e37]
+            - generic [ref=e40]: TV Shows
+          - link "Top Anime" [ref=e41] [cursor=pointer]:
+            - /url: /discover/anime
+            - img [ref=e42]
+            - generic [ref=e44]: Top Anime
+      - generic [ref=e45]:
+        - heading "Library" [level=3] [ref=e46]
+        - link "History" [ref=e48] [cursor=pointer]:
+          - /url: /history
+          - img [ref=e49]
+          - generic [ref=e53]: History
+  - main [ref=e54]
