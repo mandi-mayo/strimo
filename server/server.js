@@ -118,6 +118,7 @@ app.get('/api/proxy/embed', async (req, res) => {
     const ALLOWED_HOSTS = [
         'vidsrc.pm', 'vidsrc-embed.su', 'vidsrcme.su', 'vsrc.su',
         'vidfast.pro', 'vidsrc.xyz', 'vidsrc.fyi', 'vidsrc.cc',
+        'videasy.net',
     ];
     let parsedUrl;
     try {

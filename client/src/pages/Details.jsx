@@ -159,89 +159,60 @@ export default function Details() {
 
     if (type === 'anime') {
       if (malId) {
-        sources.push({ name: '📺 VidSrc PM', url: `https://vidsrc.pm/embed/anime/${malId}/${currentEpisode}`, priority: 1 });
-        sources.push({
-          name: 'VidSrc ME',
-          url: imdbId
-            ? `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${currentSeason || 1}&episode=${currentEpisode}`
-            : `https://vidsrc-embed.su/embed/tv?tmdb=${tmdbId || ''}&season=${currentSeason || 1}&episode=${currentEpisode}`,
-          priority: 4
-        });
+        if (tmdbId || malId) {
+          sources.push({ name: 'VidFast', url: `https://vidfast.pro/tv/${tmdbId || malId}/${currentSeason || 1}/${currentEpisode}`, priority: 1 });
+        }
+        if (tmdbId) {
+          sources.push({ name: 'Videasy', url: `https://player.videasy.net/tv/${tmdbId}/${currentSeason || 1}/${currentEpisode}`, priority: 2 });
+        }
         sources.push({
           name: 'VidSrc ME 2',
           url: imdbId
             ? `https://vidsrcme.su/embed/tv?imdb=${imdbId}&season=${currentSeason || 1}&episode=${currentEpisode}`
             : `https://vidsrcme.su/embed/tv?tmdb=${tmdbId || ''}&season=${currentSeason || 1}&episode=${currentEpisode}`,
-          priority: 5
-        });
-        sources.push({
-          name: 'VidSrc ME 3',
-          url: imdbId
-            ? `https://vsrc.su/embed/tv?imdb=${imdbId}&season=${currentSeason || 1}&episode=${currentEpisode}`
-            : `https://vsrc.su/embed/tv?tmdb=${tmdbId || ''}&season=${currentSeason || 1}&episode=${currentEpisode}`,
-          priority: 6
+          priority: 3
         });
       }
     } else if (type === 'series') {
-      sources.push({
-        name: 'VidSrc PM',
-        url: imdbId
-          ? `https://vidsrc.pm/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
-          : `https://vidsrc.pm/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
-        priority: 1
-      });
       if (tmdbId) {
+        sources.push({
+          name: 'VidFast',
+          url: `https://vidfast.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+          priority: 1
+        });
+        sources.push({
+          name: 'Videasy',
+          url: `https://player.videasy.net/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+          priority: 2
+        });
       }
-      sources.push({
-        name: 'VidSrc ME',
-        url: imdbId
-          ? `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
-          : `https://vidsrc-embed.su/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
-        priority: 4
-      });
       sources.push({
         name: 'VidSrc ME 2',
         url: imdbId
           ? `https://vidsrcme.su/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
           : `https://vidsrcme.su/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
-        priority: 5
-      });
-      sources.push({
-        name: 'VidSrc ME 3',
-        url: imdbId
-          ? `https://vsrc.su/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
-          : `https://vsrc.su/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
-        priority: 6
+        priority: 3
       });
     } else {
       // Movies
-      sources.push({
-        name: 'VidSrc PM',
-        url: imdbId ? `https://vidsrc.pm/embed/movie?imdb=${imdbId}` : `https://vidsrc.pm/embed/movie?tmdb=${tmdbId}`,
-        priority: 1
-      });
       if (tmdbId) {
+        sources.push({
+          name: 'VidFast',
+          url: `https://vidfast.pro/movie/${tmdbId}`,
+          priority: 1
+        });
+        sources.push({
+          name: 'Videasy',
+          url: `https://player.videasy.net/movie/${tmdbId}`,
+          priority: 2
+        });
       }
-      sources.push({
-        name: 'VidSrc ME',
-        url: imdbId
-          ? `https://vidsrc-embed.su/embed/movie?imdb=${imdbId}`
-          : `https://vidsrc-embed.su/embed/movie?tmdb=${tmdbId}`,
-        priority: 4
-      });
       sources.push({
         name: 'VidSrc ME 2',
         url: imdbId
           ? `https://vidsrcme.su/embed/movie?imdb=${imdbId}`
           : `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}`,
-        priority: 5
-      });
-      sources.push({
-        name: 'VidSrc ME 3',
-        url: imdbId
-          ? `https://vsrc.su/embed/movie?imdb=${imdbId}`
-          : `https://vsrc.su/embed/movie?tmdb=${tmdbId}`,
-        priority: 6
+        priority: 3
       });
     }
 
