@@ -210,6 +210,19 @@ function formatTMDB(item, type) {
         source: 'tmdb'
     };
 }
+// Helper: Fetch with retry and exponential backoff (useful for Jikan rate-limiting)
+async function fetchWithRetry(url, options = {}, retries = 3, delay = 1000) {
+    try {
+        return await axios.get(url, options);
+    } catch (error) {
+        if (retries > 0 && (error.response?.status === 429 || error.response?.status >= 500)) {
+            console.warn(`[Retry] Fetch failed for ${url}. Retrying in ${delay}ms... (Remaining retries: ${retries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return fetchWithRetry(url, options, retries - 1, delay * 2);
+        }
+        throw error;
+    }
+}
 
 // Helper: format Jikan anime item
 function formatAnime(item) {
@@ -722,8 +735,14 @@ app.get('/api/anime/details/:malId', async (req, res) => {
     try {
         const { malId } = req.params;
         const [animeRes, episodesRes] = await Promise.all([
-            axios.get(`${JIKAN_BASE}/anime/${malId}/full`),
-            axios.get(`${JIKAN_BASE}/anime/${malId}/episodes`).catch(() => ({ data: { data: [] } }))
+            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/full`, { httpsAgent }).catch(e => {
+                console.error("Failed to fetch anime details from Jikan:", e.message);
+                throw e;
+            }),
+            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/episodes`, { httpsAgent }).catch(e => {
+                console.warn("Failed to fetch anime episodes from Jikan:", e.message);
+                return { data: { data: [] } };
+            })
         ]);
 
         const anime = animeRes.data.data;
