@@ -1,7 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { AlertCircle, Server, ChevronDown, Settings, Languages, Play } from 'lucide-react';
-import CinematicPlayer from './CinematicPlayer';
-import api from '../api';
+import { AlertCircle, Server, ChevronDown, Play } from 'lucide-react';
 
 /**
  * VideoPlayer - Advanced streaming player with Cinematic UI
@@ -12,55 +10,16 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   const [attemptedSources, setAttemptedSources] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [resolvedStream, setResolvedStream] = useState(null);
-  const [subtitles, setSubtitles] = useState([]);
-  const [useCinematic, setUseCinematic] = useState(false);
-
   const iframeRef = useRef(null);
   const dropdownRef = useRef(null);
 
   const validSources = sources.filter(s => s?.url && typeof s.url === 'string');
   const currentSource = validSources[currentSourceIndex];
 
-  // Attempt to resolve direct stream for VidLink only
+  // Set loading to false after source changes (iframe onLoad handles the rest)
   useEffect(() => {
-    const resolveSource = async () => {
-      if (!currentSource) return;
-
-      setIsLoading(true);
-      setResolvedStream(null);
-      setSubtitles([]);
-      setUseCinematic(false);
-
-      if (currentSource.name.includes('VidLink')) {
-        try {
-          const { id, type, season, episode } = mediaInfo;
-          const res = await api.get(`/resolve/vidlink?id=${id}&type=${type}&season=${season}&episode=${episode}`);
-
-          if (res.data && res.data.stream) {
-            setResolvedStream(res.data.stream);
-            if (res.data.subtitles) {
-              setSubtitles(res.data.subtitles.map(s => ({
-                label: s.label,
-                url: s.url,
-                lang: s.lang
-              })));
-            }
-            setUseCinematic(true);
-          }
-        } catch (error) {
-          if (debug) console.error('[VideoPlayer] Failed to resolve VidLink stream, falling back to iframe');
-          setUseCinematic(false);
-        }
-      } else {
-        setUseCinematic(false);
-      }
-
-      setIsLoading(false);
-    };
-
-    resolveSource();
-  }, [currentSourceIndex, mediaInfo, currentSource, debug]);
+    setIsLoading(true);
+  }, [currentSourceIndex]);
 
 
   // Last-resort: kill window.open on the parent frame too
@@ -176,26 +135,17 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
 
         {/* Video Render */}
         <div className={`w-full h-full transition-all duration-1000 ease-out ${isLoading ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} transform-gpu`}>
-          {useCinematic && resolvedStream ? (
-            <CinematicPlayer
-              url={resolvedStream}
-              subtitles={subtitles}
-              title={title}
-              onReady={() => setIsLoading(false)}
+          {currentSource && (
+            <iframe
+              ref={iframeRef}
+              src={currentSource.url}
+              title={`${title} - ${currentSource.name}`}
+              allowFullScreen
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+              onLoad={handleIframeLoad}
+              onError={handleIframeError}
+              className="w-full h-full border-none pointer-events-auto bg-black"
             />
-          ) : (
-            currentSource && (
-              <iframe
-                ref={iframeRef}
-                src={currentSource.url}
-                title={`${title} - ${currentSource.name}`}
-                allowFullScreen
-                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                onLoad={handleIframeLoad}
-                onError={handleIframeError}
-                className="w-full h-full border-none pointer-events-auto bg-black"
-              />
-            )
           )}
         </div>
       </div>

@@ -119,6 +119,8 @@ app.get('/api/proxy/embed', async (req, res) => {
         'vidsrc.pm', 'vidsrc-embed.su', 'vidsrcme.su', 'vsrc.su',
         'vidfast.pro', 'vidsrc.xyz', 'vidsrc.fyi', 'vidsrc.cc',
         'videasy.net',
+        'megaplay.buzz', 'animeplay.cfd',  // MegaPlay — MAL ID native, true sub/dub
+        'player.vidplus.to',               // VidPlus — AniList ID, sub/dub toggle
     ];
     let parsedUrl;
     try {
@@ -725,18 +727,77 @@ app.get('/api/anime/details/:malId', async (req, res) => {
         ]);
 
         const anime = animeRes.data.data;
-        const episodes = episodesRes.data.data?.map(ep => ({
+        const jikanEpisodes = episodesRes.data.data?.map(ep => ({
             id: ep.mal_id,
             name: ep.title || ep.title_japanese,
             number: ep.mal_id,
             season: 1,
             summary: ep.synopsis || '',
             filler: ep.filler,
-            recap: ep.recap
+            recap: ep.recap,
+            image: null
         })) || [];
+
+        // Cross-reference TMDB — used for episode thumbnails
+        let tmdb_id = null;
+        let tmdbEpisodeImages = {}; // map of episode_number -> still URL
+        if (TMDB_KEY) {
+            try {
+                const title = anime.title_english || anime.title;
+                const year = anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null);
+                const searchQuery = encodeURIComponent(title);
+                const tmdbSearch = await axios.get(
+                    `${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}${year ? `&first_air_date_year=${year}` : ''}&language=en-US`
+                );
+                const results = tmdbSearch.data?.results || [];
+                if (results.length > 0) {
+                    tmdb_id = results[0].id;
+                    // Fetch season 1 episodes to get still_path thumbnails
+                    try {
+                        const seasonRes = await axios.get(
+                            `${TMDB_BASE}/tv/${tmdb_id}/season/1?api_key=${TMDB_KEY}&language=en-US`
+                        );
+                        (seasonRes.data?.episodes || []).forEach(ep => {
+                            if (ep.still_path) {
+                                tmdbEpisodeImages[ep.episode_number] = `${TMDB_IMG}/w300${ep.still_path}`;
+                            }
+                        });
+                    } catch (e) {
+                        console.warn('[AnimeDetails] TMDB season fetch failed:', e.message);
+                    }
+                }
+            } catch (e) {
+                console.warn('[AnimeDetails] TMDB cross-reference failed:', e.message);
+            }
+        }
+
+        // Merge TMDB thumbnails into Jikan episode list
+        const episodes = jikanEpisodes.map(ep => ({
+            ...ep,
+            image: tmdbEpisodeImages[ep.number] || null
+        }));
+
+        // Cross-reference AniList — used for AniList-based embed sources
+        // AniList GraphQL accepts MAL ID via idMal, no API key required
+        let anilist_id = null;
+        try {
+            const alRes = await axios.post(
+                'https://graphql.anilist.co',
+                {
+                    query: 'query($id:Int){Media(idMal:$id,type:ANIME){id}}',
+                    variables: { id: parseInt(malId) }
+                },
+                { headers: { 'Content-Type': 'application/json', Accept: 'application/json' } }
+            );
+            anilist_id = alRes.data?.data?.Media?.id || null;
+        } catch (e) {
+            console.warn('[AnimeDetails] AniList cross-reference failed:', e.message);
+        }
 
         res.json({
             ...formatAnime(anime),
+            tmdb_id,
+            anilist_id,
             genres: anime.genres?.map(g => g.name) || [],
             studios: anime.studios?.map(s => s.name) || [],
             trailer: anime.trailer?.embed_url || null,

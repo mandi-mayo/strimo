@@ -151,6 +151,7 @@ export default function Details() {
     const tmdbId = isTmdb ? (details.tmdb_id || details.id) : details.tmdb_id;
     const imdbId = details.imdb_id;
     const malId = details.mal_id;
+    const anilistId = details.anilist_id;
     const mediaId = tmdbId || imdbId || malId;
 
     if (!mediaId) return [];
@@ -159,19 +160,29 @@ export default function Details() {
 
     if (type === 'anime') {
       if (malId) {
-        if (tmdbId || malId) {
-          sources.push({ name: 'VidFast', url: `https://vidfast.pro/tv/${tmdbId || malId}/${currentSeason || 1}/${currentEpisode}`, priority: 1 });
-        }
-        if (tmdbId) {
-          sources.push({ name: 'Videasy', url: `https://player.videasy.net/tv/${tmdbId}/${currentSeason || 1}/${currentEpisode}`, priority: 2 });
-        }
+        // ── Tier 1: Native anime providers (MAL ID, true sub/dub) ──────────────
+        // Sub sources first, then dub — ordered: MegaPlay(Sub) → AnimePlay(Sub) → MegaPlay(Dub) → AnimePlay(Dub)
         sources.push({
-          name: 'VidSrc ME 2',
-          url: imdbId
-            ? `https://vidsrcme.su/embed/tv?imdb=${imdbId}&season=${currentSeason || 1}&episode=${currentEpisode}`
-            : `https://vidsrcme.su/embed/tv?tmdb=${tmdbId || ''}&season=${currentSeason || 1}&episode=${currentEpisode}`,
+          name: 'MegaPlay (Sub)',
+          url: `https://megaplay.buzz/stream/mal/${malId}/${currentEpisode}/sub`,
+          priority: 1
+        });
+        sources.push({
+          name: 'AnimePlay (Sub)',
+          url: `https://animeplay.cfd/stream/mal/${malId}/${currentEpisode}/sub`,
+          priority: 2
+        });
+        sources.push({
+          name: 'MegaPlay (Dub)',
+          url: `https://megaplay.buzz/stream/mal/${malId}/${currentEpisode}/dub`,
           priority: 3
         });
+        sources.push({
+          name: 'AnimePlay (Dub)',
+          url: `https://animeplay.cfd/stream/mal/${malId}/${currentEpisode}/dub`,
+          priority: 4
+        });
+
       }
     } else if (type === 'series') {
       if (tmdbId) {
