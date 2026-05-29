@@ -746,16 +746,31 @@ app.get('/api/anime/details/:malId', async (req, res) => {
                 const title = anime.title_english || anime.title;
                 const year = anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null);
                 const searchQuery = encodeURIComponent(title);
-                const tmdbSearch = await axios.get(
-                    `${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}${year ? `&first_air_date_year=${year}` : ''}&language=en-US`
-                );
-                const results = tmdbSearch.data?.results || [];
+
+                // Try with year filter first; if no results, retry without it
+                let results = [];
+                if (year) {
+                    const r = await axios.get(
+                        `${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`,
+                        { httpsAgent, timeout: 10000 }
+                    );
+                    results = r.data?.results || [];
+                }
+                if (results.length === 0) {
+                    const r = await axios.get(
+                        `${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`,
+                        { httpsAgent, timeout: 10000 }
+                    );
+                    results = r.data?.results || [];
+                }
+
                 if (results.length > 0) {
                     tmdb_id = results[0].id;
                     // Fetch season 1 episodes to get still_path thumbnails
                     try {
                         const seasonRes = await axios.get(
-                            `${TMDB_BASE}/tv/${tmdb_id}/season/1?api_key=${TMDB_KEY}&language=en-US`
+                            `${TMDB_BASE}/tv/${tmdb_id}/season/1?api_key=${TMDB_KEY}&language=en-US`,
+                            { httpsAgent, timeout: 10000 }
                         );
                         (seasonRes.data?.episodes || []).forEach(ep => {
                             if (ep.still_path) {
