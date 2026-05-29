@@ -735,6 +735,7 @@ app.get('/api/anime/details/:malId', async (req, res) => {
             summary: ep.synopsis || '',
             filler: ep.filler,
             recap: ep.recap,
+            aired: ep.aired,
             image: null
         })) || [];
 
@@ -766,15 +767,100 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                 if (results.length > 0) {
                     tmdb_id = results[0].id;
-                    // Fetch season 1 episodes to get still_path thumbnails
+                    
+                    // Fetch TV show details to get seasons list
+                    const tvRes = await axios.get(
+                        `${TMDB_BASE}/tv/${tmdb_id}?api_key=${TMDB_KEY}&language=en-US`,
+                        { httpsAgent, timeout: 10000 }
+                    );
+                    const seasons = tvRes.data?.seasons || [];
+                    const jikanDateStr = anime.aired?.from ? anime.aired.from.split('T')[0] : null;
+                    const jikanYear = anime.year || (jikanDateStr ? new Date(jikanDateStr).getFullYear() : null);
+                    
+                    let bestSeasonNum = 1;
+                    let maxSeasonScore = -1;
+                    
+                    seasons.forEach(s => {
+                        // Skip specials (season 0) unless it's the only option or title matches specials
+                        if (s.season_number === 0 && seasons.length > 1) return;
+                        
+                        let score = 0;
+                        if (s.air_date) {
+                            if (jikanDateStr && s.air_date === jikanDateStr) {
+                                score += 100;
+                            } else if (jikanYear && new Date(s.air_date).getFullYear() === jikanYear) {
+                                score += 20;
+                            }
+                        }
+                        
+                        const sName = (s.name || '').toLowerCase();
+                        const aTitle = title.toLowerCase();
+                        if (sName && (aTitle.includes(sName) || sName.includes(aTitle))) {
+                            score += 15;
+                        }
+                        
+                        if (score > maxSeasonScore) {
+                            maxSeasonScore = score;
+                            bestSeasonNum = s.season_number;
+                        }
+                    });
+                    
+                    // Fetch episodes for the best matched season to get still_path thumbnails
                     try {
                         const seasonRes = await axios.get(
-                            `${TMDB_BASE}/tv/${tmdb_id}/season/1?api_key=${TMDB_KEY}&language=en-US`,
+                            `${TMDB_BASE}/tv/${tmdb_id}/season/${bestSeasonNum}?api_key=${TMDB_KEY}&language=en-US`,
                             { httpsAgent, timeout: 10000 }
                         );
-                        (seasonRes.data?.episodes || []).forEach(ep => {
-                            if (ep.still_path) {
-                                tmdbEpisodeImages[ep.episode_number] = `${TMDB_IMG}/w300${ep.still_path}`;
+                        const tmdbEpisodes = seasonRes.data?.episodes || [];
+                        
+                        // Map each Jikan episode to the best matching TMDB episode
+                        jikanEpisodes.forEach(ep => {
+                            let bestEp = null;
+                            let maxEpScore = -1;
+                            
+                            tmdbEpisodes.forEach(tmdbEp => {
+                                let score = 0;
+                                
+                                // 1. Title match (clean comparison)
+                                const jTitle = (ep.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                                const tTitle = (tmdbEp.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                                
+                                if (jTitle && tTitle) {
+                                    if (jTitle === tTitle) {
+                                        score += 100;
+                                    } else if (jTitle.includes(tTitle) || tTitle.includes(jTitle)) {
+                                        score += 40;
+                                    }
+                                }
+                                
+                                // 2. Air date match
+                                if (ep.aired && tmdbEp.air_date) {
+                                    const jDate = ep.aired.split('T')[0];
+                                    if (jDate === tmdbEp.air_date) {
+                                        score += 50;
+                                    } else {
+                                        const diffDays = Math.abs(new Date(jDate) - new Date(tmdbEp.air_date)) / (1000 * 60 * 60 * 24);
+                                        if (diffDays <= 3) {
+                                            score += 30;
+                                        } else if (diffDays <= 7) {
+                                            score += 15;
+                                        }
+                                    }
+                                }
+                                
+                                // 3. Episode number match (strong baseline/fallback)
+                                if (ep.number === tmdbEp.episode_number) {
+                                    score += 10;
+                                }
+                                
+                                if (score > maxEpScore) {
+                                    maxEpScore = score;
+                                    bestEp = tmdbEp;
+                                }
+                            });
+                            
+                            if (bestEp && bestEp.still_path) {
+                                tmdbEpisodeImages[ep.number] = `${TMDB_IMG}/w300${bestEp.still_path}`;
                             }
                         });
                     } catch (e) {
@@ -788,7 +874,13 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
         // Merge TMDB thumbnails into Jikan episode list
         const episodes = jikanEpisodes.map(ep => ({
-            ...ep,
+            id: ep.id,
+            name: ep.name,
+            number: ep.number,
+            season: ep.season,
+            summary: ep.summary,
+            filler: ep.filler,
+            recap: ep.recap,
             image: tmdbEpisodeImages[ep.number] || null
         }));
 
