@@ -9,12 +9,10 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Bypass SSL certificate errors for third-party providers (VidLink, etc.)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// Insecure httpsAgent — ONLY for embed proxies with invalid/self-signed certs
 const https = require('https');
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 axios.defaults.timeout = 15000;
-axios.defaults.httpsAgent = httpsAgent;
 
 // Test deployment endpoint
 app.get('/api/test-deploy', (req, res) => {
@@ -740,11 +738,11 @@ app.get('/api/anime/details/:malId', async (req, res) => {
     try {
         const { malId } = req.params;
         const [animeRes, episodesRes] = await Promise.all([
-            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/full`, { httpsAgent }).catch(e => {
+            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/full`).catch(e => {
                 console.error("Failed to fetch anime details from Jikan:", e.message);
                 throw e;
             }),
-            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/episodes`, { httpsAgent }).catch(e => {
+            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/episodes`).catch(e => {
                 console.warn("Failed to fetch anime episodes from Jikan:", e.message);
                 return { data: { data: [] } };
             })
@@ -774,9 +772,9 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                     const [withYear, withoutYear] = await Promise.all([
                         year
-                            ? axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`, { httpsAgent, timeout: 7000 }).catch(() => null)
+                            ? axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`, { timeout: 10000 }).catch(e => { console.warn('[AnimeDetails] TMDB year-search failed:', e.message); return null; })
                             : Promise.resolve(null),
-                        axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`, { httpsAgent, timeout: 7000 }).catch(() => null)
+                        axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`, { timeout: 10000 }).catch(e => { console.warn('[AnimeDetails] TMDB search failed:', e.message); return null; })
                     ]);
 
                     const results = (withYear?.data?.results?.length ? withYear.data.results : withoutYear?.data?.results) || [];
@@ -785,8 +783,8 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                     const tvRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}?api_key=${TMDB_KEY}&language=en-US`,
-                        { httpsAgent, timeout: 7000 }
-                    ).catch(() => null);
+                        { timeout: 10000 }
+                    ).catch(e => { console.warn('[AnimeDetails] TMDB tv-details failed:', e.message); return null; });
 
                     const seasons = (tvRes?.data?.seasons || []).filter(s => s.season_number > 0);
                     const jikanDateStr = anime.aired?.from ? anime.aired.from.split('T')[0] : null;
@@ -807,8 +805,8 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                     const seasonRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}/season/${bestSeasonNum}?api_key=${TMDB_KEY}&language=en-US`,
-                        { httpsAgent, timeout: 7000 }
-                    ).catch(() => null);
+                        { timeout: 10000 }
+                    ).catch(e => { console.warn('[AnimeDetails] TMDB season-fetch failed:', e.message); return null; });
 
                     // Build episode list from TMDB — thumbnails come directly from still_path
                     episodes = (seasonRes?.data?.episodes || []).map(ep => {
