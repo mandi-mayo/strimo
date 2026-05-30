@@ -763,43 +763,46 @@ app.get('/api/anime/details/:malId', async (req, res) => {
             image: null
         })) || [];
 
-        // Cross-reference TMDB — used for episode thumbnails
-        // Run search queries in parallel to avoid Vercel function timeout
+        // Cross-reference TMDB (for thumbnails) + AniList (for embed IDs) — run in parallel
         let tmdb_id = null;
-        let tmdbEpisodeImages = {}; // map of episode_number -> still URL
-        if (TMDB_KEY) {
-            try {
-                const title = anime.title_english || anime.title;
-                const year = anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null);
-                const searchQuery = encodeURIComponent(title);
+        let tmdbEpisodeImages = {};
+        let anilist_id = null;
 
-                // Fire both search queries simultaneously (with and without year filter)
-                const [withYear, withoutYear] = await Promise.all([
-                    year
-                        ? axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`, { httpsAgent, timeout: 8000 }).catch(() => null)
-                        : Promise.resolve(null),
-                    axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`, { httpsAgent, timeout: 8000 }).catch(() => null)
-                ]);
+        await Promise.all([
+            // ── TMDB: get episode stills ───────────────────────────────────────────
+            (async () => {
+                if (!TMDB_KEY) return;
+                try {
+                    const title = anime.title_english || anime.title;
+                    const year = anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null);
+                    const searchQuery = encodeURIComponent(title);
 
-                // Prefer year-filtered result; fall back to unrestricted
-                const results = (withYear?.data?.results?.length ? withYear.data.results : withoutYear?.data?.results) || [];
+                    // Fire both search variants simultaneously; prefer year-filtered hit
+                    const [withYear, withoutYear] = await Promise.all([
+                        year
+                            ? axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`, { httpsAgent, timeout: 7000 }).catch(() => null)
+                            : Promise.resolve(null),
+                        axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`, { httpsAgent, timeout: 7000 }).catch(() => null)
+                    ]);
 
-                if (results.length > 0) {
+                    const results = (withYear?.data?.results?.length ? withYear.data.results : withoutYear?.data?.results) || [];
+                    if (!results.length) return;
+
                     tmdb_id = results[0].id;
 
-                    // Fetch TV details (for seasons list) and all plausible seasons in parallel
+                    // Fetch TV details (seasons list) — needed to pick correct season
                     const tvRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}?api_key=${TMDB_KEY}&language=en-US`,
-                        { httpsAgent, timeout: 8000 }
+                        { httpsAgent, timeout: 7000 }
                     ).catch(() => null);
 
                     const seasons = (tvRes?.data?.seasons || []).filter(s => s.season_number > 0);
                     const jikanDateStr = anime.aired?.from ? anime.aired.from.split('T')[0] : null;
                     const jikanYear = anime.year || (jikanDateStr ? new Date(jikanDateStr).getFullYear() : null);
 
-                    // Score seasons to find best match
+                    // Pick best matching season by air year / title
                     let bestSeasonNum = 1;
-                    let maxSeasonScore = -1;
+                    let maxScore = -1;
                     seasons.forEach(s => {
                         let score = 0;
                         if (s.air_date) {
@@ -809,32 +812,43 @@ app.get('/api/anime/details/:malId', async (req, res) => {
                         const sName = (s.name || '').toLowerCase();
                         const aTitle = title.toLowerCase();
                         if (sName && (aTitle.includes(sName) || sName.includes(aTitle))) score += 15;
-                        if (score > maxSeasonScore) { maxSeasonScore = score; bestSeasonNum = s.season_number; }
+                        if (score > maxScore) { maxScore = score; bestSeasonNum = s.season_number; }
                     });
 
-                    // Fetch only the best-matched season's episodes
+                    // Fetch chosen season's episode stills
                     const seasonRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}/season/${bestSeasonNum}?api_key=${TMDB_KEY}&language=en-US`,
-                        { httpsAgent, timeout: 8000 }
+                        { httpsAgent, timeout: 7000 }
                     ).catch(() => null);
 
-                    const tmdbEpisodes = seasonRes?.data?.episodes || [];
-
-                    // Map Jikan episodes to TMDB stills by episode number (fast, reliable)
-                    const tmdbByNumber = {};
-                    tmdbEpisodes.forEach(ep => { tmdbByNumber[ep.episode_number] = ep; });
-
-                    jikanEpisodes.forEach(ep => {
-                        const match = tmdbByNumber[ep.number];
-                        if (match?.still_path) {
-                            tmdbEpisodeImages[ep.number] = `${TMDB_IMG}/w300${match.still_path}`;
+                    // Direct episode-number lookup — fast O(1) map
+                    (seasonRes?.data?.episodes || []).forEach(ep => {
+                        if (ep.still_path) {
+                            tmdbEpisodeImages[ep.episode_number] = `${TMDB_IMG}/w300${ep.still_path}`;
                         }
                     });
+                } catch (e) {
+                    console.warn('[AnimeDetails] TMDB thumbnail fetch failed:', e.message);
                 }
-            } catch (e) {
-                console.warn('[AnimeDetails] TMDB cross-reference failed:', e.message);
-            }
-        }
+            })(),
+
+            // ── AniList: get AniList ID for embed sources ──────────────────────────
+            (async () => {
+                try {
+                    const alRes = await axios.post(
+                        'https://graphql.anilist.co',
+                        {
+                            query: 'query($id:Int){Media(idMal:$id,type:ANIME){id}}',
+                            variables: { id: parseInt(malId) }
+                        },
+                        { headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, timeout: 7000 }
+                    );
+                    anilist_id = alRes.data?.data?.Media?.id || null;
+                } catch (e) {
+                    console.warn('[AnimeDetails] AniList cross-reference failed:', e.message);
+                }
+            })()
+        ]);
 
         // Merge TMDB thumbnails into Jikan episode list
         const episodes = jikanEpisodes.map(ep => ({
@@ -847,23 +861,6 @@ app.get('/api/anime/details/:malId', async (req, res) => {
             recap: ep.recap,
             image: tmdbEpisodeImages[ep.number] || null
         }));
-
-        // Cross-reference AniList — used for AniList-based embed sources
-        // AniList GraphQL accepts MAL ID via idMal, no API key required
-        let anilist_id = null;
-        try {
-            const alRes = await axios.post(
-                'https://graphql.anilist.co',
-                {
-                    query: 'query($id:Int){Media(idMal:$id,type:ANIME){id}}',
-                    variables: { id: parseInt(malId) }
-                },
-                { headers: { 'Content-Type': 'application/json', Accept: 'application/json' } }
-            );
-            anilist_id = alRes.data?.data?.Media?.id || null;
-        } catch (e) {
-            console.warn('[AnimeDetails] AniList cross-reference failed:', e.message);
-        }
 
         res.json({
             ...formatAnime(anime),
