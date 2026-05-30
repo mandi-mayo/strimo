@@ -751,25 +751,20 @@ app.get('/api/anime/details/:malId', async (req, res) => {
         ]);
 
         const anime = animeRes.data.data;
-        const jikanEpisodes = episodesRes.data.data?.map(ep => ({
-            id: ep.mal_id,
-            name: ep.title || ep.title_japanese,
-            number: ep.mal_id,
-            season: 1,
-            summary: ep.synopsis || '',
-            filler: ep.filler,
-            recap: ep.recap,
-            aired: ep.aired,
-            image: null
-        })) || [];
 
-        // Cross-reference TMDB (for thumbnails) + AniList (for embed IDs) — run in parallel
+        // Jikan episodes are blocked on cloud IPs — use for filler/recap flags only
+        const jikanMeta = {};
+        (episodesRes.data.data || []).forEach(ep => {
+            jikanMeta[ep.mal_id] = { filler: ep.filler, recap: ep.recap, aired: ep.aired };
+        });
+
+        // TMDB (episodes + thumbnails) and AniList (embed ID) — fully parallel
         let tmdb_id = null;
-        let tmdbEpisodeImages = {};
         let anilist_id = null;
+        let episodes = [];
 
         await Promise.all([
-            // ── TMDB: get episode stills ───────────────────────────────────────────
+            // ── TMDB: primary episode list with stills ────────────────────────────
             (async () => {
                 if (!TMDB_KEY) return;
                 try {
@@ -777,7 +772,6 @@ app.get('/api/anime/details/:malId', async (req, res) => {
                     const year = anime.year || (anime.aired?.from ? new Date(anime.aired.from).getFullYear() : null);
                     const searchQuery = encodeURIComponent(title);
 
-                    // Fire both search variants simultaneously; prefer year-filtered hit
                     const [withYear, withoutYear] = await Promise.all([
                         year
                             ? axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`, { httpsAgent, timeout: 7000 }).catch(() => null)
@@ -787,10 +781,8 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                     const results = (withYear?.data?.results?.length ? withYear.data.results : withoutYear?.data?.results) || [];
                     if (!results.length) return;
-
                     tmdb_id = results[0].id;
 
-                    // Fetch TV details (seasons list) — needed to pick correct season
                     const tvRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}?api_key=${TMDB_KEY}&language=en-US`,
                         { httpsAgent, timeout: 7000 }
@@ -800,9 +792,7 @@ app.get('/api/anime/details/:malId', async (req, res) => {
                     const jikanDateStr = anime.aired?.from ? anime.aired.from.split('T')[0] : null;
                     const jikanYear = anime.year || (jikanDateStr ? new Date(jikanDateStr).getFullYear() : null);
 
-                    // Pick best matching season by air year / title
-                    let bestSeasonNum = 1;
-                    let maxScore = -1;
+                    let bestSeasonNum = 1, maxScore = -1;
                     seasons.forEach(s => {
                         let score = 0;
                         if (s.air_date) {
@@ -815,32 +805,51 @@ app.get('/api/anime/details/:malId', async (req, res) => {
                         if (score > maxScore) { maxScore = score; bestSeasonNum = s.season_number; }
                     });
 
-                    // Fetch chosen season's episode stills
                     const seasonRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}/season/${bestSeasonNum}?api_key=${TMDB_KEY}&language=en-US`,
                         { httpsAgent, timeout: 7000 }
                     ).catch(() => null);
 
-                    // Direct episode-number lookup — fast O(1) map
-                    (seasonRes?.data?.episodes || []).forEach(ep => {
-                        if (ep.still_path) {
-                            tmdbEpisodeImages[ep.episode_number] = `${TMDB_IMG}/w300${ep.still_path}`;
-                        }
+                    // Build episode list from TMDB — thumbnails come directly from still_path
+                    episodes = (seasonRes?.data?.episodes || []).map(ep => {
+                        const m = jikanMeta[ep.episode_number] || {};
+                        return {
+                            id: ep.id,
+                            name: ep.name,
+                            number: ep.episode_number,
+                            season: bestSeasonNum,
+                            summary: ep.overview || '',
+                            filler: m.filler || false,
+                            recap: m.recap || false,
+                            aired: ep.air_date || m.aired || null,
+                            runtime: ep.runtime || null,
+                            rating: ep.vote_average || null,
+                            image: ep.still_path ? `${TMDB_IMG}/w300${ep.still_path}` : null
+                        };
                     });
+
+                    // Pad remaining episodes up to MAL's total count (no thumbnail, but selectable)
+                    const malTotal = anime.episodes || 0;
+                    for (let i = episodes.length + 1; i <= malTotal; i++) {
+                        const m = jikanMeta[i] || {};
+                        episodes.push({
+                            id: `ep-${i}`, name: `Episode ${i}`, number: i,
+                            season: bestSeasonNum, summary: '',
+                            filler: m.filler || false, recap: m.recap || false,
+                            aired: m.aired || null, runtime: null, rating: null, image: null
+                        });
+                    }
                 } catch (e) {
-                    console.warn('[AnimeDetails] TMDB thumbnail fetch failed:', e.message);
+                    console.warn('[AnimeDetails] TMDB episode fetch failed:', e.message);
                 }
             })(),
 
-            // ── AniList: get AniList ID for embed sources ──────────────────────────
+            // ── AniList: embed source ID ───────────────────────────────────────────
             (async () => {
                 try {
                     const alRes = await axios.post(
                         'https://graphql.anilist.co',
-                        {
-                            query: 'query($id:Int){Media(idMal:$id,type:ANIME){id}}',
-                            variables: { id: parseInt(malId) }
-                        },
+                        { query: 'query($id:Int){Media(idMal:$id,type:ANIME){id}}', variables: { id: parseInt(malId) } },
                         { headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, timeout: 7000 }
                     );
                     anilist_id = alRes.data?.data?.Media?.id || null;
@@ -850,17 +859,18 @@ app.get('/api/anime/details/:malId', async (req, res) => {
             })()
         ]);
 
-        // Merge TMDB thumbnails into Jikan episode list
-        const episodes = jikanEpisodes.map(ep => ({
-            id: ep.id,
-            name: ep.name,
-            number: ep.number,
-            season: ep.season,
-            summary: ep.summary,
-            filler: ep.filler,
-            recap: ep.recap,
-            image: tmdbEpisodeImages[ep.number] || null
-        }));
+        // Final fallback: if TMDB returned nothing, generate bare episode stubs from MAL count
+        if (episodes.length === 0) {
+            const count = anime.episodes || 0;
+            for (let i = 1; i <= count; i++) {
+                const m = jikanMeta[i] || {};
+                episodes.push({
+                    id: `ep-${i}`, name: `Episode ${i}`, number: i, season: 1,
+                    summary: '', filler: m.filler || false, recap: m.recap || false,
+                    aired: m.aired || null, runtime: null, rating: null, image: null
+                });
+            }
+        }
 
         res.json({
             ...formatAnime(anime),
