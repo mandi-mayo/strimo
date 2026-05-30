@@ -19,6 +19,64 @@ app.get('/api/test-deploy', (req, res) => {
     res.json({ deployed: true, timestamp: Date.now() });
 });
 
+// Diagnostic endpoint — traces the anime thumbnail pipeline step by step
+app.get('/api/debug/anime-thumbs/:malId', async (req, res) => {
+    const { malId } = req.params;
+    const report = { malId, steps: [], tmdb_key_exists: !!TMDB_KEY };
+
+    try {
+        // Step 1: Jikan anime details
+        report.steps.push({ step: '1-jikan-details', status: 'starting' });
+        const animeRes = await axios.get(`${JIKAN_BASE}/anime/${malId}`, { timeout: 10000 });
+        const anime = animeRes.data?.data;
+        const title = anime?.title_english || anime?.title;
+        report.steps[report.steps.length - 1] = { step: '1-jikan-details', status: 'ok', title, year: anime?.year };
+
+        if (!TMDB_KEY) {
+            report.steps.push({ step: '2-tmdb-search', status: 'skipped', reason: 'No TMDB_KEY' });
+            return res.json(report);
+        }
+
+        // Step 2: TMDB search
+        report.steps.push({ step: '2-tmdb-search', status: 'starting' });
+        const searchQuery = encodeURIComponent(title);
+        const searchRes = await axios.get(
+            `${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`,
+            { timeout: 10000 }
+        );
+        const results = searchRes.data?.results || [];
+        report.steps[report.steps.length - 1] = {
+            step: '2-tmdb-search', status: 'ok',
+            results_count: results.length,
+            first_result: results[0] ? { id: results[0].id, name: results[0].name } : null
+        };
+
+        if (!results.length) return res.json(report);
+        const tmdb_id = results[0].id;
+
+        // Step 3: TMDB season
+        report.steps.push({ step: '3-tmdb-season', status: 'starting' });
+        const seasonRes = await axios.get(
+            `${TMDB_BASE}/tv/${tmdb_id}/season/1?api_key=${TMDB_KEY}&language=en-US`,
+            { timeout: 10000 }
+        );
+        const eps = seasonRes.data?.episodes || [];
+        const withStills = eps.filter(ep => ep.still_path);
+        report.steps[report.steps.length - 1] = {
+            step: '3-tmdb-season', status: 'ok',
+            episodes_count: eps.length,
+            with_stills: withStills.length,
+            sample_image: withStills[0] ? `${TMDB_IMG}/w300${withStills[0].still_path}` : null
+        };
+
+        report.success = true;
+    } catch (e) {
+        report.steps.push({ step: 'ERROR', message: e.message, code: e.response?.status });
+    }
+
+    res.json(report);
+});
+
 // Subtitle Proxy to handle CORS
 app.get('/api/proxy/subtitle', async (req, res) => {
     const { url } = req.query;
