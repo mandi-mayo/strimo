@@ -140,7 +140,7 @@
 .video-player-container {
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 0 0 25px 25px;
+  border-radius: 0 0 10px 10px;
   overflow: hidden;
   background: #1a1515;
 }
@@ -153,7 +153,7 @@
   padding: 3rem;
   color: rgba(255, 255, 255, 0.5);
   background: rgba(31, 31, 31, 0.4);
-  border-radius: 25px;
+  border-radius: 10px;
   text-align: center;
 }
 
@@ -380,12 +380,12 @@
 /* Cinematic Player Enhancements */
 .cinematic-shadow {
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(133, 2, 3, 0.1);
-  border-radius: 20px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
 .artplayer-app {
-  border-radius: 20px;
+  border-radius: 10px;
   overflow: hidden;
   background: #000;
 }
@@ -401,4 +401,65 @@
 
 .art-video-player .art-subtitle {
   transition: all 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile Phone UI Styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Mobile detail page - fade-in animation */
+@keyframes mobileFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Animate sections in on mobile detail page */
+  .block.lg\:hidden > div > div {
+    animation: mobileFadeUp 0.5s ease-out both;
+  }
+
+  .block.lg\:hidden > div > div:nth-child(2) {
+    animation-delay: 0.05s;
+  }
+
+  .block.lg\:hidden > div > div:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+
+  .block.lg\:hidden > div > div:nth-child(4) {
+    animation-delay: 0.15s;
+  }
+
+  .block.lg\:hidden > div > div:nth-child(5) {
+    animation-delay: 0.2s;
+  }
+
+  /* Mobile cast avatar hover glow */
+  .block.lg\:hidden .cast-avatar-glow {
+    box-shadow: 0 0 12px rgba(133, 2, 3, 0.3);
+  }
+
+  /* Mobile recommendation cards - subtle press effect */
+  .block.lg\:hidden a:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
+  }
+
+  /* Smooth scrollbar areas on mobile */
+  .block.lg\:hidden .hide-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Mobile video player container - full bleed */
+  .block.lg\:hidden .aspect-video:first-child {
+    border-radius: 0;
+  }
 }

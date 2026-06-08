@@ -66,36 +66,27 @@ export default function Sidebar({ onOpenSearch, isSearchOpen }) {
 
   return (
     <>
-      {/* Mobile Top Header - Floating */}
-      <div className="lg:hidden fixed top-4 left-4 right-4 h-16 bg-[#1a1717]/80 backdrop-blur-3xl border border-white/10 rounded-2xl z-[150] flex items-center px-5 justify-between shadow-2xl">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
-            <img src="/logo_final.svg" alt="s" className="w-full h-full object-contain" />
-          </div>
-          <div className="flex items-center">
-            <img src="/strimo-text.svg" alt="strimo" className="h-6 w-auto object-contain" />
-          </div>
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <Link
-            to="/"
-            className={clsx(
-              'p-2.5 rounded-xl transition-all duration-300',
-              location.pathname === '/' ? 'text-[#850203] bg-[#850203]/10 scale-105' : 'text-white/40 hover:text-white/80'
-            )}
-          >
-            <Home size={22} strokeWidth={location.pathname === '/' ? 2.5 : 1.5} />
-          </Link>
-          {!isSearchOpen && (
-            <button
-              onClick={onOpenSearch}
-              className="p-2.5 rounded-xl text-white/40 active:text-white transition-all hover:text-white/80 hover:bg-white/5"
-            >
-              <Search size={22} strokeWidth={1.5} />
-            </button>
+      {/* Mobile Bottom Floating Pill */}
+      <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-1 px-2 py-2 bg-[#1a1515]/85 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)]">
+        <Link
+          to="/"
+          className={clsx(
+            'p-3 rounded-full transition-all duration-300 relative',
+            location.pathname === '/'
+              ? 'text-white bg-[#850203] shadow-[0_0_15px_rgba(133,2,3,0.5)]'
+              : 'text-white/40 active:text-white active:bg-white/10'
           )}
-        </div>
+        >
+          <Home size={20} strokeWidth={location.pathname === '/' ? 2.5 : 1.5} />
+        </Link>
+        {!isSearchOpen && (
+          <button
+            onClick={onOpenSearch}
+            className="p-3 rounded-full text-white/40 active:text-white active:bg-white/10 transition-all duration-300"
+          >
+            <Search size={20} strokeWidth={1.5} />
+          </button>
+        )}
       </div>
 
       {/* Desktop Sidebar Wrapper */}

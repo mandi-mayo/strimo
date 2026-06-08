@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { AlertCircle, Server, ChevronDown, Play } from 'lucide-react';
+import { AlertCircle, Server, Play } from 'lucide-react';
 
 /**
  * VideoPlayer - Advanced streaming player with Cinematic UI
@@ -9,9 +9,9 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   const [currentSourceIndex, setCurrentSourceIndex] = useState(0);
   const [attemptedSources, setAttemptedSources] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const iframeRef = useRef(null);
-  const dropdownRef = useRef(null);
+
 
   const validSources = sources.filter(s => s?.url && typeof s.url === 'string');
   const currentSource = validSources[currentSourceIndex];
@@ -29,20 +29,10 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
     return () => { window.open = orig; };
   }, []);
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+
 
   const handleSourceChange = (newIndex) => {
     setCurrentSourceIndex(newIndex);
-    setIsDropdownOpen(false);
   };
 
   const handleIframeLoad = () => setIsLoading(false);
@@ -63,74 +53,20 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   }
 
   return (
-    <div className="relative w-full flex flex-col rounded-[2rem] overflow-hidden bg-black shadow-[0_0_40px_rgba(0,0,0,0.6)] border border-white/10 group transition-all duration-500 hover:shadow-[0_0_60px_rgba(229,9,20,0.15)] ring-1 ring-white/5">
-
-      {/* Sleek Glassmorphic Header */}
-      <div className="relative z-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 sm:px-8 py-4 sm:py-5 bg-gradient-to-b from-[#110e0e] to-black/95 border-b border-white/5">
-
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-[#e50914]/10 flex items-center justify-center border border-[#e50914]/20 shadow-[0_0_15px_rgba(229,9,20,0.2)]">
-            <Server size={18} className="text-[#e50914]" />
-          </div>
-          <div className="flex flex-col">
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-3 text-white hover:text-[#e50914] transition-colors group/btn"
-              >
-                <span className="font-semibold text-sm sm:text-base tracking-wide">{currentSource?.name}</span>
-                <ChevronDown size={16} className={`transition-transform duration-500 text-white/40 group-hover/btn:text-[#e50914] ${isDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Cinematic Dropdown Menu */}
-              {isDropdownOpen && (
-                <div className="absolute top-full left-0 mt-3 w-64 bg-[#141111]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-2 flex flex-col gap-1 max-h-[300px] overflow-y-auto hide-scrollbar">
-                    {validSources.map((source, idx) => {
-                      const isSelected = idx === currentSourceIndex;
-                      const hasFailed = attemptedSources.includes(idx);
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => handleSourceChange(idx)}
-                          className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm transition-all duration-300 ${isSelected
-                            ? 'bg-[#e50914] text-white font-bold shadow-lg shadow-[#e50914]/30'
-                            : 'text-white/60 hover:bg-white/10 hover:text-white'
-                            }`}
-                        >
-                          <div className="flex items-center gap-3 truncate">
-                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_white]" />}
-                            <span className="truncate">{source.name}</span>
-                          </div>
-                          {hasFailed && (
-                            <span className="text-[9px] text-red-100 uppercase font-black bg-black/40 px-2 py-0.5 rounded-md border border-white/10">Failed</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-
-      </div>
+    <div className="relative w-full flex flex-col rounded-lg overflow-hidden bg-black shadow-[0_0_40px_rgba(0,0,0,0.6)] border border-white/10 group transition-all duration-500 hover:shadow-[0_0_60px_rgba(229,9,20,0.15)] ring-1 ring-white/5">
 
       {/* Player Container */}
       <div className="relative w-full aspect-video bg-[#050505] overflow-hidden z-10">
-        {/* Animated Cinematic Loading State */}
-        <div className={`absolute inset-0 z-40 bg-[#050505] flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          <div className="relative mb-8">
-            <div className="w-20 h-20 border-4 border-white/5 rounded-full shadow-[0_0_30px_rgba(229,9,20,0.1)]"></div>
-            <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-t-[#e50914] rounded-full animate-spin"></div>
+        {/* Loading State - scaled for mobile */}
+        <div className={`absolute inset-0 z-40 bg-[#050505] flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className="relative mb-4 sm:mb-8">
+            <div className="w-14 h-14 sm:w-20 sm:h-20 border-[3px] sm:border-4 border-white/5 rounded-full"></div>
+            <div className="absolute inset-0 w-14 h-14 sm:w-20 sm:h-20 border-[3px] sm:border-4 border-transparent border-t-[#e50914] rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Play className="text-[#e50914] fill-[#e50914] ml-1 opacity-50" size={24} />
+              <Play className="text-[#e50914] fill-[#e50914] ml-0.5 opacity-50" size={16} />
             </div>
           </div>
-          <h3 className="text-white text-lg font-medium tracking-wide mb-2 animate-pulse">Initializing Stream</h3>
-          <p className="text-white/30 text-xs uppercase tracking-[0.3em] font-medium">Connecting to {currentSource?.name}</p>
+          <p className="text-white/40 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] font-medium">Fetching, one moment...</p>
         </div>
 
         {/* Video Render */}
@@ -147,6 +83,36 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
               className="w-full h-full border-none pointer-events-auto bg-black"
             />
           )}
+        </div>
+      </div>
+
+      {/* Server Selector Bar - Below Player */}
+      <div className="relative z-50 flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-[#0d0b0b] border-t border-white/5">
+        {/* Server icon */}
+        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#e50914]/8 flex items-center justify-center border border-[#e50914]/15 shrink-0">
+          <Server size={13} className="text-[#e50914] sm:w-4 sm:h-4" />
+        </div>
+
+        {/* Source pills - horizontal scroll */}
+        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
+          {validSources.map((source, idx) => {
+            const isSelected = idx === currentSourceIndex;
+            const hasFailed = attemptedSources.includes(idx);
+            return (
+              <button
+                key={idx}
+                onClick={() => handleSourceChange(idx)}
+                className={`relative whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-semibold transition-all duration-300 shrink-0 ${isSelected
+                  ? 'bg-[#e50914] text-white shadow-[0_0_12px_rgba(229,9,20,0.3)]'
+                  : hasFailed
+                    ? 'bg-white/5 text-white/25 line-through'
+                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80 active:scale-95'
+                }`}
+              >
+                {source.name}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

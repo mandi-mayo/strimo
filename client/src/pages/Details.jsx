@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import api, { API_BASE_URL as API } from '../api';
-import { Play, Star, Clock, Calendar, Award, ChevronDown, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Play, Star, Clock, Calendar, Award, ChevronDown, ChevronLeft, ChevronRight, AlertCircle, ArrowLeft } from 'lucide-react';
 import ImageWithFallback from '../components/ImageWithFallback.jsx';
 import VideoPlayer from '../components/VideoPlayer.jsx';
 
@@ -27,6 +27,9 @@ export default function Details() {
 
   const [showSeasonSelect, setShowSeasonSelect] = useState(false);
   const [showEpisodeSelect, setShowEpisodeSelect] = useState(false);
+
+  // Mobile: show player when user taps play
+  const [mobileShowPlayer, setMobileShowPlayer] = useState(false);
 
   const episodeScrollRef = useRef(null);
   const seasonSelectRef = useRef(null);
@@ -372,7 +375,7 @@ export default function Details() {
                 ref={episodeScrollRef}
                 className="flex gap-4 overflow-x-auto pb-6 mt-2 snap-x snap-mandatory hide-scrollbar relative scroll-smooth"
               >
-                {(type === 'anime' ? displayEpisodes : list).map((ep) => {
+              {(type === 'anime' ? displayEpisodes : list).map((ep) => {
                   const isActive = ep.number === currentEpisode;
                   return (
                     <div
@@ -457,7 +460,367 @@ export default function Details() {
     );
   };
 
-  return (
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MOBILE LAYOUT (matches phn_ui.png wireframe)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderMobileLayout = () => (
+    <div className="flex flex-col min-h-screen bg-[#0a0808] text-white pb-8">
+
+      {/* ── Video Player Hero Area ─────────────────────────────────── */}
+      <div className={`relative w-full bg-[#1a1515] overflow-hidden rounded-b-lg ${mobileShowPlayer ? '' : ''}`} style={mobileShowPlayer ? {} : { minHeight: '340px', aspectRatio: '4/3' }}>
+        {mobileShowPlayer && videoSources.length > 0 ? (
+          <div id="player" className="w-full">
+            <VideoPlayer
+              sources={videoSources}
+              title={details.title}
+              mediaInfo={{
+                id: details.tmdb_id || details.id,
+                type: type,
+                season: currentSeason,
+                episode: currentEpisode
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            <ImageWithFallback
+              src={details.backdrop || details.image}
+              alt={details.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0808] via-black/40 to-black/20" />
+
+            {/* Back Button - positioned below the mobile header */}
+            <button
+              onClick={() => window.history.back()}
+              className="absolute top-5 left-4 z-20 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform"
+            >
+              <ArrowLeft size={20} className="text-white" />
+            </button>
+
+            {/* Play Button */}
+            {videoSources.length > 0 && (
+              <button
+                onClick={() => setMobileShowPlayer(true)}
+                className="absolute inset-0 z-10 flex items-center justify-center"
+              >
+                <div className="w-16 h-16 bg-white/15 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20 shadow-[0_0_30px_rgba(133,2,3,0.4)] active:scale-90 transition-all duration-200">
+                  <Play className="text-white fill-white ml-1 drop-shadow-lg" size={28} />
+                </div>
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Movie Info Section ──────────────────────────────────────── */}
+      <div className="px-4 pt-3 pb-1">
+        {/* Type Badge + Status */}
+        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[#850203] text-white uppercase tracking-widest shadow-[0_0_10px_rgba(133,2,3,0.3)]">
+            {type === 'series' ? 'TV Series' : type === 'anime' ? 'Anime' : 'Movie'}
+          </span>
+          {details.status && (
+            <span className="px-2 py-0.5 rounded-full text-[8px] font-semibold bg-white/10 text-white/70 uppercase tracking-wider border border-white/5">
+              {details.status}
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h1 className="text-[15px] font-bold uppercase tracking-wide leading-snug mb-2 text-white">
+          {details.title}
+        </h1>
+
+        {/* Meta Info Row */}
+        <div className="flex items-center gap-2.5 flex-wrap text-[10px] font-medium text-white/60 mb-3">
+          {details.rating && (
+            <span className="flex items-center gap-1 text-[#f5c518] font-semibold">
+              <Star size={10} fill="#f5c518" stroke="#f5c518" />
+              {details.rating}/10
+            </span>
+          )}
+          <span className="flex items-center gap-1">
+            <Calendar size={10} className="opacity-60" /> {details.year}
+          </span>
+          {details.runtime && (
+            <span className="flex items-center gap-1">
+              <Clock size={10} className="opacity-60" /> {details.runtime} min
+            </span>
+          )}
+        </div>
+
+        {/* Genres */}
+        {details.genres && details.genres.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap mb-3">
+            {details.genres.map(g => (
+              <span key={g} className="px-2 py-0.5 bg-white/8 text-white/70 rounded-full text-[9px] font-semibold border border-white/5">
+                {g}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Description */}
+        <p className="text-[11px] text-white/50 leading-relaxed mb-4">
+          {details.description}
+        </p>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2.5 mb-1">
+          {videoSources.length > 0 && (
+            <button
+              onClick={() => {
+                setMobileShowPlayer(true);
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#850203] rounded-full text-white text-[11px] font-semibold active:scale-95 transition-all shadow-[0_0_20px_rgba(133,2,3,0.4)]"
+            >
+              <Play className="fill-current" size={13} />
+              WATCH NOW
+            </button>
+          )}
+          {details.trailer && (
+            <button
+              onClick={() => setShowTrailer(!showTrailer)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-white/8 border border-white/10 rounded-full text-white text-[11px] font-semibold active:scale-95 transition-all"
+            >
+              TRAILER
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Episodes Section (TV / Anime) ──────────────────────────── */}
+      {(type === 'series' || type === 'anime') && videoSources.length > 0 && (
+        <div className="px-4 mt-5">
+          <h2 className="text-[14px] font-bold text-white tracking-wide mb-3 flex items-center gap-2">
+            <span className="w-0.5 h-4 bg-[#850203] rounded-full" />
+            Episodes
+          </h2>
+
+          {/* Season & Episode Dropdowns - mobile optimized */}
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            {type === 'series' && details.seasons && details.seasons.length > 0 && (
+              <div className="relative" ref={seasonSelectRef}>
+                <div
+                  onClick={() => {
+                    setShowSeasonSelect(!showSeasonSelect);
+                    setShowEpisodeSelect(false);
+                  }}
+                  className={`flex items-center gap-2 px-3.5 py-2 bg-[#1a1515] border rounded-xl text-xs font-semibold transition-all cursor-pointer ${showSeasonSelect ? 'border-[#850203] text-[#850203]' : 'border-white/10 text-white/80'}`}
+                >
+                  <span>S{currentSeason}</span>
+                  <ChevronDown size={12} className={`transition-transform duration-300 ${showSeasonSelect ? 'rotate-180' : ''}`} />
+                </div>
+                <div className={`absolute top-full left-0 mt-2 w-36 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden transition-all z-[60] py-1 ${showSeasonSelect ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                  <div className="max-h-[200px] overflow-y-auto hide-scrollbar">
+                    {details.seasons.map(s => (
+                      <button
+                        key={s.season_number}
+                        onClick={() => {
+                          setCurrentSeason(s.season_number);
+                          setShowSeasonSelect(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-xs transition-colors ${currentSeason === s.season_number ? 'bg-[#850203] text-white' : 'text-white/70 hover:bg-white/5'}`}
+                      >
+                        Season {s.season_number}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentList.length > 0 && (
+              <div className="relative" ref={episodeSelectRef}>
+                <div
+                  onClick={() => {
+                    setShowEpisodeSelect(!showEpisodeSelect);
+                    setShowSeasonSelect(false);
+                  }}
+                  className={`flex items-center gap-2 px-3.5 py-2 bg-[#1a1515] border rounded-xl text-xs font-semibold transition-all cursor-pointer ${showEpisodeSelect ? 'border-[#850203] text-[#850203]' : 'border-white/10 text-white/80'}`}
+                >
+                  <span>EP {currentEpisode}</span>
+                  <ChevronDown size={12} className={`transition-transform duration-300 ${showEpisodeSelect ? 'rotate-180' : ''}`} />
+                </div>
+                <div className={`absolute top-full left-0 mt-2 w-36 bg-[#292323] border border-white/10 rounded-xl shadow-2xl overflow-hidden transition-all z-[60] py-1 ${showEpisodeSelect ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                  <div className="max-h-[200px] overflow-y-auto hide-scrollbar">
+                    {currentList.map(ep => (
+                      <button
+                        key={ep.id || ep.number}
+                        onClick={() => {
+                          setCurrentEpisode(ep.number);
+                          setShowEpisodeSelect(false);
+                          setMobileShowPlayer(true);
+                          setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-xs transition-colors ${currentEpisode === ep.number ? 'bg-[#850203] text-white' : 'text-white/70 hover:bg-white/5'}`}
+                      >
+                        EP {ep.number}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Episode Range Chips for Anime */}
+          {type === 'anime' && totalEpisodePages > 1 && (
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar mb-4 pb-1">
+              {Array.from({ length: totalEpisodePages }).map((_, i) => {
+                const startEp = i * CHUNK_SIZE + 1;
+                const endEp = Math.min((i + 1) * CHUNK_SIZE, currentList.length);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setEpisodePage(i)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors ${episodePage === i ? 'bg-[#850203] text-white' : 'bg-[#1a1515] text-white/50'}`}
+                  >
+                    {startEp}–{endEp}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Horizontal Episode Scroll */}
+          <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar scroll-smooth">
+            {episodesLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex-none w-[140px] h-[100px] bg-[#1a1515] rounded-2xl animate-pulse" />
+              ))
+            ) : (
+              (type === 'anime' ? displayEpisodes : currentList).map((ep) => {
+                const isActive = ep.number === currentEpisode;
+                return (
+                  <div
+                    key={ep.id || ep.number}
+                    className="flex-none w-[140px] cursor-pointer group"
+                    onClick={() => {
+                      setCurrentEpisode(ep.number);
+                      setMobileShowPlayer(true);
+                      if (type === 'anime') {
+                        const newPage = Math.floor((ep.number - 1) / CHUNK_SIZE);
+                        if (newPage !== episodePage) setEpisodePage(newPage);
+                      }
+                      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+                    }}
+                  >
+                    <div className={`relative w-full aspect-video rounded-xl overflow-hidden mb-2 border-2 transition-all duration-300 ${isActive ? 'border-[#850203] shadow-[0_0_12px_rgba(133,2,3,0.4)]' : 'border-transparent'}`}>
+                      {ep.image ? (
+                        <ImageWithFallback src={ep.image} alt={ep.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-[#1a1515] flex items-center justify-center">
+                          <AlertCircle size={18} className="text-white/10" />
+                        </div>
+                      )}
+                      {isActive && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <div className="w-8 h-8 bg-white/15 backdrop-blur rounded-full flex items-center justify-center">
+                            <Play className="text-white fill-white ml-0.5" size={14} />
+                          </div>
+                        </div>
+                      )}
+                      {ep.filler && (
+                        <span className="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 rounded-full bg-[#ff1a1c]/90 text-white font-bold">
+                          FILLER
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-[11px] font-semibold truncate transition-colors ${isActive ? 'text-[#850203]' : 'text-white/70'}`}>
+                      {ep.number}. {ep.name || `Episode ${ep.number}`}
+                    </p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Actors Section ─────────────────────────────────────────── */}
+      {details.cast && details.cast.length > 0 && (
+        <div className="px-4 mt-6">
+          <h2 className="text-[14px] font-bold text-white tracking-wide mb-4 flex items-center gap-2">
+            <span className="w-0.5 h-4 bg-[#850203] rounded-full" />
+            Actors
+          </h2>
+          <div className="flex gap-3.5 overflow-x-auto pb-2 hide-scrollbar">
+            {details.cast.map((actor, i) => (
+              <div key={i} className="flex-none w-[60px] text-center group">
+                <div className="w-[52px] h-[52px] rounded-full overflow-hidden mx-auto mb-1.5 ring-2 ring-white/5 group-active:ring-[#850203]/50 transition-all bg-[#1a1515]">
+                  {actor.image ? (
+                    <img src={actor.image} alt={actor.name} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-sm text-white/25 font-semibold">
+                      {actor.name?.[0]}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[9px] text-white/70 font-medium truncate leading-tight">{actor.name}</p>
+                <p className="text-[8px] text-white/35 truncate leading-tight">{actor.character}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── More Like This Section ─────────────────────────────────── */}
+      {details.recommendations && details.recommendations.length > 0 && (
+        <div className="px-4 mt-6">
+          <h2 className="text-[14px] font-bold text-white tracking-wide mb-4 flex items-center gap-2">
+            <span className="w-0.5 h-4 bg-[#850203] rounded-full" />
+            More like this
+          </h2>
+          <div className="grid grid-cols-3 gap-2.5">
+            {details.recommendations.filter(i => i.image).slice(0, 9).map((item) => (
+              <Link
+                key={item.id}
+                to={buildLink(item)}
+                className="relative aspect-[2/3] bg-[#1a1515] rounded-md overflow-hidden group border border-white/5 active:scale-95 transition-all duration-200"
+              >
+                <ImageWithFallback
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/70 to-transparent" />
+                <p className="absolute bottom-1.5 left-1.5 right-1.5 text-[8px] text-white/90 font-semibold truncate z-10">{item.title}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Trailer Modal ──────────────────────────────────────────── */}
+      {showTrailer && details.trailer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md" onClick={() => setShowTrailer(false)}>
+          <div className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            <iframe
+              src={details.trailer}
+              title="Trailer"
+              allowFullScreen
+              allow="autoplay; fullscreen"
+              sandbox="allow-scripts allow-same-origin"
+              className="w-full h-full border-none"
+            />
+            <button onClick={() => setShowTrailer(false)} className="absolute top-3 right-3 p-2.5 bg-black/50 hover:bg-[#850203] text-white rounded-full backdrop-blur-md transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DESKTOP LAYOUT (existing design, unchanged)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderDesktopLayout = () => (
     <div className="flex-1 py-4 sm:py-8 px-4 sm:px-8 lg:px-16 flex flex-col gap-6 sm:gap-10 overflow-y-auto">
       <div className="relative w-full bg-[#1a1515]/40 backdrop-blur-xl rounded-[30px] min-h-[450px] overflow-hidden flex flex-col lg:flex-row text-white shadow-2xl border border-white/5">
         <ImageWithFallback
@@ -642,5 +1005,22 @@ export default function Details() {
 
 
     </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: Mobile vs Desktop
+  // ═══════════════════════════════════════════════════════════════════════════
+  return (
+    <>
+      {/* Mobile Layout - visible on small screens only */}
+      <div className="block lg:hidden">
+        {renderMobileLayout()}
+      </div>
+
+      {/* Desktop Layout - visible on large screens only */}
+      <div className="hidden lg:block">
+        {renderDesktopLayout()}
+      </div>
+    </>
   );
 }

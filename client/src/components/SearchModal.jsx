@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search as SearchIcon, Play, Star, X } from 'lucide-react';
+import { Search as SearchIcon, Play, Star, X, ArrowLeft, Film, Tv, Sparkles } from 'lucide-react';
 import api, { API_BASE_URL as API } from '../api';
 import ImageWithFallback from './ImageWithFallback.jsx';
 
@@ -77,7 +77,123 @@ export default function SearchModal({ isOpen, onClose }) {
 
   const allResults = [...results, ...animeResults];
 
-  return (
+  const getTypeIcon = (type) => {
+    if (type === 'anime') return <Sparkles size={10} />;
+    if (type === 'series') return <Tv size={10} />;
+    return <Film size={10} />;
+  };
+
+  const getTypeLabel = (type) => {
+    if (type === 'anime') return 'Anime';
+    if (type === 'series') return 'TV';
+    return 'Movie';
+  };
+
+  // ═══════════════════════════════════════════════════════════════════
+  // MOBILE SEARCH LAYOUT
+  // ═══════════════════════════════════════════════════════════════════
+  const renderMobileSearch = () => (
+    <div className="fixed inset-0 z-[200] bg-[#0a0808] flex flex-col">
+      {/* Search Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <button
+          onClick={onClose}
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 active:bg-white/10 transition-colors shrink-0"
+        >
+          <ArrowLeft size={18} className="text-white/70" />
+        </button>
+        <div className="flex-1 flex items-center bg-[#1a1515] border border-white/8 rounded-full px-4 h-10 focus-within:border-[#850203]/40 transition-colors">
+          <SearchIcon size={15} className="text-white/30 shrink-0 mr-2.5" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search..."
+            className="flex-1 bg-transparent border-none outline-none text-white text-[13px] placeholder:text-white/25"
+            style={{ fontFamily: 'Poppins, sans-serif' }}
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="text-white/25 active:text-white/60 ml-2 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="flex-1 overflow-y-auto px-4 pb-28 hide-scrollbar">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="spinner" style={{ width: '28px', height: '28px', borderWidth: '2px' }} />
+          </div>
+        ) : allResults.length > 0 ? (
+          <div className="flex flex-col gap-2.5 pt-2">
+            {allResults.filter(i => i.image).map((item, idx) => (
+              <div
+                key={`${item.id}-${idx}`}
+                onClick={() => handleResultClick(item)}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] active:bg-white/[0.07] transition-colors cursor-pointer"
+              >
+                {/* Poster Thumbnail */}
+                <div className="w-[52px] h-[72px] rounded-sm overflow-hidden bg-[#1a1515] shrink-0">
+                  <ImageWithFallback
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-[13px] font-semibold leading-tight truncate">{item.title}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="flex items-center gap-1 text-[9px] font-bold text-[#850203] uppercase tracking-wider bg-[#850203]/10 px-1.5 py-0.5 rounded">
+                      {getTypeIcon(item.type)}
+                      {getTypeLabel(item.type)}
+                    </span>
+                    {item.year && (
+                      <span className="text-white/35 text-[10px]">{item.year}</span>
+                    )}
+                    {item.rating && (
+                      <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5 font-medium">
+                        <Star size={8} fill="#f5c518" stroke="#f5c518" />
+                        {item.rating}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Play hint */}
+                <div className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                  <Play size={11} className="text-white/40 fill-white/40 ml-0.5" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : query && !isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <SearchIcon size={32} className="text-white/10 mb-3" />
+            <p className="text-white/40 text-[13px] font-medium">No results for "{query}"</p>
+            <p className="text-white/20 text-[11px] mt-1">Try a different spelling or keyword</p>
+          </div>
+        ) : !query ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <SearchIcon size={36} className="text-white/6 mb-3" />
+            <p className="text-white/20 text-[12px]">Search movies, shows & anime</p>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // DESKTOP SEARCH LAYOUT (existing)
+  // ═══════════════════════════════════════════════════════════════════
+  const renderDesktopSearch = () => (
     <div className="fixed inset-0 z-[100] flex flex-col items-center pt-20 px-4 bg-[#1a1515]/80 backdrop-blur-2xl animate-in fade-in duration-200">
       {/* Background click area to close */}
       <div className="absolute inset-0 z-0" onClick={onClose} />
@@ -126,7 +242,7 @@ export default function SearchModal({ isOpen, onClose }) {
               <div 
                 key={`${item.id}-${idx}`}
                 onClick={() => handleResultClick(item)}
-                className="aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-[2rem] overflow-hidden relative group cursor-pointer border border-white/5 transition-all duration-700 hover:border-white/20 hover:shadow-2xl hover:-translate-y-1"
+                className="aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-lg overflow-hidden relative group cursor-pointer border border-white/5 transition-all duration-700 hover:border-white/20 hover:shadow-2xl hover:-translate-y-1"
               >
                 <ImageWithFallback
                   src={item.image}
@@ -165,5 +281,19 @@ export default function SearchModal({ isOpen, onClose }) {
         ) : null}
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile: minimal full-screen search */}
+      <div className="block lg:hidden">
+        {renderMobileSearch()}
+      </div>
+
+      {/* Desktop: existing modal overlay */}
+      <div className="hidden lg:block">
+        {renderDesktopSearch()}
+      </div>
+    </>
   );
 }
