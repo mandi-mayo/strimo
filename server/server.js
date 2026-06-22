@@ -177,6 +177,8 @@ app.get('/api/proxy/embed', async (req, res) => {
 
     // Only allow known embed providers
     const ALLOWED_HOSTS = [
+        'vidlink.pro',                             // VidLink embed provider
+        'vidrock.ru',                              // VidRock embed provider
         'vidsrc.pm', 'vidsrc-embed.su', 'vidsrcme.su', 'vsrc.su',
         'vidfast.pro', 'vidsrc.xyz', 'vidsrc.fyi', 'vidsrc.cc',
         'videasy.net',

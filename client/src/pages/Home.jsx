@@ -226,9 +226,20 @@ export default function Home() {
       {/* Continue Watching */}
       {watchHistory.length > 0 && (
         <div className="flex flex-col gap-4 group/section relative scroll-mt-20">
-          <h3 className="text-2xl sm:text-[28px] text-white tracking-wide flex items-center gap-2 font-medium">
-            Continue Watching
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl sm:text-[28px] text-white tracking-wide flex items-center gap-2 font-medium">
+              Continue Watching
+            </h3>
+            <button
+              onClick={() => {
+                localStorage.removeItem('strimo_watch_history');
+                setWatchHistory([]);
+              }}
+              className="px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-semibold bg-white/5 text-white/40 hover:bg-[#850203]/20 hover:text-[#ff1a1c] border border-white/5 hover:border-[#850203]/30 transition-all duration-300 active:scale-95"
+            >
+              Clear All
+            </button>
+          </div>
           <div className="relative">
             <div
               ref={historyRef}

@@ -22,13 +22,44 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   }, [currentSourceIndex]);
 
 
-  // Last-resort: kill window.open on the parent frame too
+  // ── Redirect, popup & ad protection ───────────────────────────────────────
   useEffect(() => {
-    const orig = window.open;
+    // 1. Kill window.open (blocks popup ads)
+    const origOpen = window.open;
     window.open = () => null;
-    return () => { window.open = orig; };
-  }, []);
 
+    // 2. Block programmatic top-level navigation via beforeunload
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // 3. Push a history entry so that iframe redirect can be reversed
+    const currentUrl = window.location.href;
+    window.history.pushState({ strimoPlayer: true }, '', currentUrl);
+
+    const handlePopState = (e) => {
+      if (!e.state?.strimoPlayer) {
+        window.history.pushState({ strimoPlayer: true }, '', currentUrl);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    // 4. Intercept focus changes — ads often redirect when iframe loses/gains focus
+    const handleWindowBlur = () => {
+      window.open = () => null;
+    };
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      window.open = origOpen;
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, []);
 
 
   const handleSourceChange = (newIndex) => {
@@ -53,10 +84,10 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
   }
 
   return (
-    <div className="relative w-full flex flex-col rounded-lg overflow-hidden bg-black shadow-[0_0_40px_rgba(0,0,0,0.6)] border border-white/10 group transition-all duration-500 hover:shadow-[0_0_60px_rgba(229,9,20,0.15)] ring-1 ring-white/5">
+    <div className="relative w-full flex flex-col rounded-lg bg-black shadow-[0_0_40px_rgba(0,0,0,0.6)] border border-white/10 group transition-all duration-500 hover:shadow-[0_0_60px_rgba(229,9,20,0.15)] ring-1 ring-white/5">
 
       {/* Player Container */}
-      <div className="relative w-full aspect-video bg-[#050505] overflow-hidden z-10">
+      <div className="relative w-full aspect-video bg-[#050505]">
         {/* Loading State - scaled for mobile */}
         <div className={`absolute inset-0 z-40 bg-[#050505] flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           <div className="relative mb-4 sm:mb-8">
@@ -70,7 +101,7 @@ const VideoPlayer = ({ sources = [], title = 'Video', mediaInfo = {}, debug = fa
         </div>
 
         {/* Video Render */}
-        <div className={`w-full h-full transition-all duration-1000 ease-out ${isLoading ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} transform-gpu`}>
+        <div className={`w-full h-full transition-opacity duration-1000 ease-out ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
           {currentSource && (
             <iframe
               ref={iframeRef}
