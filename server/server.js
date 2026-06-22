@@ -785,7 +785,8 @@ app.get('/api/anime/search', async (req, res) => {
     if (!q) return res.json([]);
     try {
         const response = await axios.get(`${JIKAN_BASE}/anime?q=${encodeURIComponent(q)}&limit=20`);
-        const results = (response.data?.data || []).map(formatAnime);
+        let results = (response.data?.data || []).map(formatAnime);
+        results = rankSearchResults(results, q);
         res.json(results);
     } catch (error) {
         console.error("Error searching anime:", error.message);

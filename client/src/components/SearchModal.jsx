@@ -9,6 +9,8 @@ export default function SearchModal({ isOpen, onClose }) {
   const [results, setResults] = useState([]);
   const [animeResults, setAnimeResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -18,6 +20,23 @@ export default function SearchModal({ isOpen, onClose }) {
     const timer = setTimeout(() => setDebouncedQuery(query), 150);
     return () => clearTimeout(timer);
   }, [query]);
+
+  // Load suggestions when opened
+  useEffect(() => {
+    if (isOpen && suggestions.length === 0) {
+      setLoadingSuggestions(true);
+      api.get('trending')
+        .then(res => {
+          setSuggestions(res.data || []);
+        })
+        .catch(err => {
+          console.error("Failed to load search suggestions", err);
+        })
+        .finally(() => {
+          setLoadingSuggestions(false);
+        });
+    }
+  }, [isOpen, suggestions.length]);
 
   // Handle escape key to close
   useEffect(() => {
@@ -181,9 +200,60 @@ export default function SearchModal({ isOpen, onClose }) {
             <p className="text-white/20 text-[11px] mt-1">Try a different spelling or keyword</p>
           </div>
         ) : !query ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <SearchIcon size={36} className="text-white/6 mb-3" />
-            <p className="text-white/20 text-[12px]">Search movies, shows & anime</p>
+          <div className="flex flex-col gap-4 pt-2">
+            <div className="flex items-center gap-2 px-1 text-white/50 text-[11px] font-bold uppercase tracking-wider">
+              <Sparkles size={12} className="text-[#850203]" />
+              <span>Suggested for You</span>
+            </div>
+            {loadingSuggestions ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }} />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {suggestions.slice(0, 10).filter(i => i.image).map((item, idx) => (
+                  <div
+                    key={`suggest-mobile-${item.id}-${idx}`}
+                    onClick={() => handleResultClick(item)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] active:bg-white/[0.07] transition-colors cursor-pointer"
+                  >
+                    {/* Poster Thumbnail */}
+                    <div className="w-[52px] h-[72px] rounded-sm overflow-hidden bg-[#1a1515] shrink-0">
+                      <ImageWithFallback
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-[13px] font-semibold leading-tight truncate">{item.title}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="flex items-center gap-1 text-[9px] font-bold text-[#850203] uppercase tracking-wider bg-[#850203]/10 px-1.5 py-0.5 rounded">
+                          {getTypeIcon(item.type)}
+                          {getTypeLabel(item.type)}
+                        </span>
+                        {item.year && (
+                          <span className="text-white/35 text-[10px]">{item.year}</span>
+                        )}
+                        {item.rating && (
+                          <span className="text-[#f5c518] text-[10px] flex items-center gap-0.5 font-medium">
+                            <Star size={8} fill="#f5c518" stroke="#f5c518" />
+                            {item.rating}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Play hint */}
+                    <div className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                      <Play size={11} className="text-white/40 fill-white/40 ml-0.5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : null}
       </div>
@@ -278,7 +348,56 @@ export default function SearchModal({ isOpen, onClose }) {
             <h3 className="text-xl mb-2 text-white/60">No results found</h3>
             <p>We couldn't find anything for "{query}".</p>
           </div>
-        ) : null}
+        ) : (
+          <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+            <div className="flex items-center gap-2 text-white/60 text-sm font-bold uppercase tracking-wider">
+              <Sparkles size={16} className="text-[#850203]" />
+              <span>Suggested Movies & TV Shows</span>
+            </div>
+            {loadingSuggestions ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="spinner" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 pb-8">
+                {suggestions.filter(i => i.image).map((item, idx) => (
+                  <div 
+                    key={`suggest-desktop-${item.id}-${idx}`}
+                    onClick={() => handleResultClick(item)}
+                    className="aspect-[2/3] bg-[#1a1515]/40 backdrop-blur-md rounded-lg overflow-hidden relative group cursor-pointer border border-white/5 transition-all duration-700 hover:border-white/20 hover:shadow-2xl hover:-translate-y-1"
+                  >
+                    <ImageWithFallback
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-5">
+                       <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
+                          <p className="text-white font-bold text-sm leading-tight mb-2 group-hover:text-[#ff1a1c] line-clamp-2">{item.title}</p>
+                          <div className="flex items-center gap-3">
+                            {item.rating && (
+                              <span className="text-[#f5c518] text-xs flex items-center gap-1 font-bold">
+                                <Star size={12} fill="#f5c518" stroke="#f5c518" />
+                                {item.rating}
+                              </span>
+                            )}
+                            <span className="text-white/40 text-[10px] font-bold tracking-wider">{item.year}</span>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Play Button Icon on Hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-50 group-hover:scale-100 pointer-events-none">
+                      <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl">
+                        <Play className="text-white fill-white ml-1 drop-shadow-md" size={24} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
