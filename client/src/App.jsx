@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
 import Details from './pages/Details.jsx';
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   return (
@@ -16,8 +17,11 @@ function App() {
           <Route path="/details/:id" element={<Details />} />
         </Route>
       </Routes>
+
+      <Analytics />
     </Router>
   );
 }
 
 export default App;
+
