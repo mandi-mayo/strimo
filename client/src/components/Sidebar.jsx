@@ -5,7 +5,6 @@ import {
   Search,
   Film,
   Tv,
-  Sparkles,
   TrendingUp,
   Calendar,
   History,
@@ -23,7 +22,6 @@ export default function Sidebar({ onOpenSearch, isSearchOpen }) {
     { name: 'Home', icon: Home, path: '/', section: 'BROWSE' },
     { name: 'Movies', icon: Film, path: '/discover/movie', section: 'BROWSE' },
     { name: 'TV Shows', icon: Tv, path: '/discover/tv', section: 'BROWSE' },
-    { name: 'Top Anime', icon: Sparkles, path: '/discover/anime', section: 'BROWSE' },
     { name: 'History', icon: History, path: '/history', section: 'LIBRARY' },
   ];
 
