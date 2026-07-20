@@ -305,6 +305,41 @@ function formatAnime(item) {
     };
 }
 
+// Helper: format AniList anime item
+function formatAniList(item) {
+    const malId = item.idMal || item.id;
+    return {
+        id: `anime-${malId}`,
+        mal_id: malId,
+        anilist_id: item.id,
+        title: item.title?.english || item.title?.romaji || 'Anime',
+        type: 'anime',
+        image: item.coverImage?.extraLarge || item.coverImage?.large,
+        backdrop: item.bannerImage || null,
+        rating: item.averageScore ? Math.round(item.averageScore) / 10 : null,
+        description: item.description ? item.description.replace(/<[^>]+>/g, '') : '',
+        year: item.seasonYear ? item.seasonYear.toString() : 'N/A',
+        episodes_count: item.episodes,
+        status: item.status,
+        source: 'anilist'
+    };
+}
+
+async function fetchAniList(query, variables = {}) {
+    try {
+        const response = await axios.post(
+            'https://graphql.anilist.co',
+            { query, variables },
+            { headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, timeout: 5000 }
+        );
+        const list = response.data?.data?.Page?.media || [];
+        return list.map(formatAniList);
+    } catch (e) {
+        console.warn('[AniList] Fetch failed:', e.message);
+        return null;
+    }
+}
+
 // ============================================================
 // TMDB ENDPOINTS
 // ============================================================
@@ -312,45 +347,39 @@ function formatAnime(item) {
 // 1. Trending/Latest (Interleaved Now Playing & Airing Today)
 app.get('/api/trending', async (req, res) => {
     try {
-        if (!TMDB_KEY) {
-            // Fallback to TVMaze if no TMDB key
-            const response = await axios.get('https://api.tvmaze.com/shows');
-            let shows = response.data.sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0)).slice(0, 20);
-            const results = shows.map(show => ({
-                id: show.id,
-                imdb_id: show.externals?.imdb,
-                title: show.name,
-                type: 'series',
-                image: show.image?.original || show.image?.medium,
-                backdrop: show.image?.original,
-                rating: show.rating?.average,
-                description: show.summary?.replace(/<[^>]+>/g, ''),
-                year: show.premiered ? show.premiered.substring(0, 4) : 'N/A',
-                source: 'tvmaze'
-            }));
-            return res.json(results);
+        if (TMDB_KEY) {
+            try {
+                const response = await axios.get(`${TMDB_BASE}/trending/all/day?api_key=${TMDB_KEY}&language=en-US`, { timeout: 8000 });
+                const results = (response.data?.results || [])
+                    .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+                    .map(item => formatTMDB(item));
+                if (results.length > 0) {
+                    return res.json(results.slice(0, 20));
+                }
+            } catch (tmdbErr) {
+                console.warn("TMDB trending failed, falling back to TVMaze:", tmdbErr.message);
+            }
         }
 
-        // Fetch Official Trending All (Movies & TV) for the day
-        const response = await axios.get(`${TMDB_BASE}/trending/all/day?api_key=${TMDB_KEY}&language=en-US`);
-        const results = (response.data.results || [])
-            .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-            .map(item => formatTMDB(item));
-
-        res.json(results.slice(0, 20));
+        // Fallback to TVMaze if no TMDB key or TMDB request failed
+        const response = await axios.get('https://api.tvmaze.com/shows', { timeout: 8000 });
+        let shows = (response.data || []).sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0)).slice(0, 20);
+        const results = shows.map(show => ({
+            id: show.id,
+            imdb_id: show.externals?.imdb,
+            title: show.name,
+            type: 'series',
+            image: show.image?.original || show.image?.medium,
+            backdrop: show.image?.original,
+            rating: show.rating?.average,
+            description: show.summary?.replace(/<[^>]+>/g, ''),
+            year: show.premiered ? show.premiered.substring(0, 4) : 'N/A',
+            source: 'tvmaze'
+        }));
+        return res.json(results);
     } catch (error) {
-        console.error("❌ Error fetching trending:", error.response?.status || error.message);
-        res.status(500).json({ error: 'Failed to fetch trending content' });
-    }
-});
-
-app.get('/api/upcoming', async (req, res) => {
-    try {
-        const response = await axios.get(`${TMDB_BASE}/movie/upcoming?api_key=${TMDB_KEY}&language=en-US&page=1`);
-        const results = (response.data.results || []).map(item => formatTMDB(item, 'movie'));
-        res.json(results);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch upcoming movies' });
+        console.error("❌ Error fetching trending:", error.message);
+        return res.json([]);
     }
 });
 
@@ -359,36 +388,41 @@ app.get('/api/popular/movies', async (req, res) => {
     try {
         if (!TMDB_KEY) return res.json([]);
         const page = req.query.page || 1;
-        const response = await axios.get(`${TMDB_BASE}/movie/popular?api_key=${TMDB_KEY}&language=en-US&page=${page}`);
-        const results = response.data.results.map(item => formatTMDB(item, 'movie'));
+        const response = await axios.get(`${TMDB_BASE}/movie/popular?api_key=${TMDB_KEY}&language=en-US&page=${page}`, { timeout: 8000 });
+        const results = (response.data?.results || []).map(item => formatTMDB(item, 'movie'));
         res.json(results);
     } catch (error) {
         console.error("Error fetching popular movies:", error.message);
-        res.status(500).json({ error: 'Failed to fetch popular movies' });
+        res.json([]);
     }
 });
 
 // 3. Popular TV
 app.get('/api/popular/tv', async (req, res) => {
     try {
-        if (!TMDB_KEY) {
-            const response = await axios.get('https://api.tvmaze.com/shows');
-            let shows = response.data.sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0)).slice(0, 20);
-            const results = shows.map(show => ({
-                id: show.id, imdb_id: show.externals?.imdb, title: show.name, type: 'series',
-                image: show.image?.original || show.image?.medium, backdrop: show.image?.original,
-                rating: show.rating?.average, description: show.summary?.replace(/<[^>]+>/g, ''),
-                year: show.premiered ? show.premiered.substring(0, 4) : 'N/A', source: 'tvmaze'
-            }));
-            return res.json(results);
+        if (TMDB_KEY) {
+            try {
+                const page = req.query.page || 1;
+                const response = await axios.get(`${TMDB_BASE}/tv/popular?api_key=${TMDB_KEY}&language=en-US&page=${page}`, { timeout: 8000 });
+                const results = (response.data?.results || []).map(item => formatTMDB(item, 'series'));
+                if (results.length > 0) return res.json(results);
+            } catch (tmdbErr) {
+                console.warn("TMDB popular tv failed, falling back to TVMaze:", tmdbErr.message);
+            }
         }
-        const page = req.query.page || 1;
-        const response = await axios.get(`${TMDB_BASE}/tv/popular?api_key=${TMDB_KEY}&language=en-US&page=${page}`);
-        const results = response.data.results.map(item => formatTMDB(item, 'series'));
+
+        const response = await axios.get('https://api.tvmaze.com/shows', { timeout: 8000 });
+        let shows = (response.data || []).sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0)).slice(0, 20);
+        const results = shows.map(show => ({
+            id: show.id, imdb_id: show.externals?.imdb, title: show.name, type: 'series',
+            image: show.image?.original || show.image?.medium, backdrop: show.image?.original,
+            rating: show.rating?.average, description: show.summary?.replace(/<[^>]+>/g, ''),
+            year: show.premiered ? show.premiered.substring(0, 4) : 'N/A', source: 'tvmaze'
+        }));
         res.json(results);
     } catch (error) {
         console.error("Error fetching popular TV:", error.message);
-        res.status(500).json({ error: 'Failed to fetch popular TV' });
+        res.json([]);
     }
 });
 
@@ -399,12 +433,12 @@ app.get('/api/top-rated/:type', async (req, res) => {
         const { type } = req.params;
         const endpoint = type === 'tv' ? 'tv' : 'movie';
         const page = req.query.page || 1;
-        const response = await axios.get(`${TMDB_BASE}/${endpoint}/top_rated?api_key=${TMDB_KEY}&language=en-US&page=${page}`);
-        const results = response.data.results.map(item => formatTMDB(item, type === 'tv' ? 'series' : 'movie'));
+        const response = await axios.get(`${TMDB_BASE}/${endpoint}/top_rated?api_key=${TMDB_KEY}&language=en-US&page=${page}`, { timeout: 8000 });
+        const results = (response.data?.results || []).map(item => formatTMDB(item, type === 'tv' ? 'series' : 'movie'));
         res.json(results);
     } catch (error) {
         console.error("Error fetching top rated:", error.message);
-        res.status(500).json({ error: 'Failed to fetch top rated' });
+        res.json([]);
     }
 });
 
@@ -412,12 +446,13 @@ app.get('/api/top-rated/:type', async (req, res) => {
 app.get('/api/upcoming', async (req, res) => {
     try {
         if (!TMDB_KEY) return res.json([]);
-        const response = await axios.get(`${TMDB_BASE}/movie/upcoming?api_key=${TMDB_KEY}&language=en-US&page=1`);
-        const results = response.data.results.map(item => formatTMDB(item, 'movie'));
+        const page = req.query.page || 1;
+        const response = await axios.get(`${TMDB_BASE}/movie/upcoming?api_key=${TMDB_KEY}&language=en-US&page=${page}`, { timeout: 8000 });
+        const results = (response.data?.results || []).map(item => formatTMDB(item, 'movie'));
         res.json(results);
     } catch (error) {
         console.error("Error fetching upcoming:", error.message);
-        res.status(500).json({ error: 'Failed to fetch upcoming' });
+        res.json([]);
     }
 });
 
@@ -426,16 +461,15 @@ app.get('/api/genres', async (req, res) => {
     try {
         if (!TMDB_KEY) return res.json([]);
         const [movieGenres, tvGenres] = await Promise.all([
-            axios.get(`${TMDB_BASE}/genre/movie/list?api_key=${TMDB_KEY}&language=en-US`),
-            axios.get(`${TMDB_BASE}/genre/tv/list?api_key=${TMDB_KEY}&language=en-US`)
+            axios.get(`${TMDB_BASE}/genre/movie/list?api_key=${TMDB_KEY}&language=en-US`, { timeout: 8000 }),
+            axios.get(`${TMDB_BASE}/genre/tv/list?api_key=${TMDB_KEY}&language=en-US`, { timeout: 8000 })
         ]);
-        // Merge and deduplicate
-        const all = [...movieGenres.data.genres, ...tvGenres.data.genres];
+        const all = [...(movieGenres.data?.genres || []), ...(tvGenres.data?.genres || [])];
         const unique = Array.from(new Map(all.map(g => [g.id, g])).values());
         res.json(unique);
     } catch (error) {
         console.error("Error fetching genres:", error.message);
-        res.status(500).json({ error: 'Failed to fetch genres' });
+        res.json([]);
     }
 });
 
@@ -447,12 +481,12 @@ app.get('/api/discover/:genreId', async (req, res) => {
         const type = req.query.type || 'movie';
         const page = req.query.page || 1;
         const endpoint = type === 'tv' ? 'tv' : 'movie';
-        const response = await axios.get(`${TMDB_BASE}/discover/${endpoint}?api_key=${TMDB_KEY}&language=en-US&with_genres=${genreId}&sort_by=popularity.desc&page=${page}`);
-        const results = response.data.results.map(item => formatTMDB(item, type === 'tv' ? 'series' : 'movie'));
+        const response = await axios.get(`${TMDB_BASE}/discover/${endpoint}?api_key=${TMDB_KEY}&language=en-US&with_genres=${genreId}&sort_by=popularity.desc&page=${page}`, { timeout: 8000 });
+        const results = (response.data?.results || []).map(item => formatTMDB(item, type === 'tv' ? 'series' : 'movie'));
         res.json(results);
     } catch (error) {
         console.error("Error discovering by genre:", error.message);
-        res.status(500).json({ error: 'Failed to discover content' });
+        res.json([]);
     }
 });
 
@@ -720,7 +754,7 @@ app.get('/api/details/:id', async (req, res) => {
         }
     } catch (error) {
         console.error("Error fetching details:", error.message);
-        res.status(500).json({ error: 'Failed to fetch details' });
+        res.json({ error: 'Failed to fetch details' });
     }
 });
 
@@ -729,8 +763,8 @@ app.get('/api/season/:showId/:seasonNum', async (req, res) => {
     try {
         const { showId, seasonNum } = req.params;
         if (TMDB_KEY) {
-            const response = await axios.get(`${TMDB_BASE}/tv/${showId}/season/${seasonNum}?api_key=${TMDB_KEY}&language=en-US`);
-            const episodes = response.data.episodes.map(ep => ({
+            const response = await axios.get(`${TMDB_BASE}/tv/${showId}/season/${seasonNum}?api_key=${TMDB_KEY}&language=en-US`, { timeout: 8000 });
+            const episodes = (response.data?.episodes || []).map(ep => ({
                 id: ep.id,
                 name: ep.name,
                 season: ep.season_number,
@@ -747,35 +781,55 @@ app.get('/api/season/:showId/:seasonNum', async (req, res) => {
         }
     } catch (error) {
         console.error("Error fetching season:", error.message);
-        res.status(500).json({ error: 'Failed to fetch season data' });
+        res.json([]);
     }
 });
 
 // ============================================================
-// ANIME ENDPOINTS (Jikan / MyAnimeList)
+// ANIME ENDPOINTS (AniList primary, Jikan fallback)
 // ============================================================
 
 // 11. Trending Anime
 app.get('/api/anime/trending', async (req, res) => {
     try {
-        const response = await axios.get(`${JIKAN_BASE}/top/anime?filter=airing&limit=20`);
-        const results = (response.data?.data || []).map(formatAnime);
+        const query = 'query { Page(page: 1, perPage: 20) { media(type: ANIME, status: RELEASING, sort: POPULARITY_DESC) { id idMal title { english romaji } coverImage { extraLarge large } bannerImage averageScore description seasonYear episodes status } } }';
+        let results = await fetchAniList(query);
+
+        if (!results || results.length === 0) {
+            try {
+                const response = await axios.get(`${JIKAN_BASE}/top/anime?filter=airing&limit=20`, { timeout: 5000 });
+                results = (response.data?.data || []).map(formatAnime);
+            } catch (e) {
+                console.warn('[Jikan] Trending anime fetch failed:', e.message);
+                results = [];
+            }
+        }
         res.json(results);
     } catch (error) {
         console.error("Error fetching trending anime:", error.message);
-        res.status(500).json({ error: 'Failed to fetch trending anime' });
+        res.json([]);
     }
 });
 
 // 12. Popular Anime
 app.get('/api/anime/popular', async (req, res) => {
     try {
-        const response = await axios.get(`${JIKAN_BASE}/top/anime?filter=bypopularity&limit=20`);
-        const results = (response.data?.data || []).map(formatAnime);
+        const query = 'query { Page(page: 1, perPage: 20) { media(type: ANIME, sort: POPULARITY_DESC) { id idMal title { english romaji } coverImage { extraLarge large } bannerImage averageScore description seasonYear episodes status } } }';
+        let results = await fetchAniList(query);
+
+        if (!results || results.length === 0) {
+            try {
+                const response = await axios.get(`${JIKAN_BASE}/top/anime?filter=bypopularity&limit=20`, { timeout: 5000 });
+                results = (response.data?.data || []).map(formatAnime);
+            } catch (e) {
+                console.warn('[Jikan] Popular anime fetch failed:', e.message);
+                results = [];
+            }
+        }
         res.json(results);
     } catch (error) {
         console.error("Error fetching popular anime:", error.message);
-        res.status(500).json({ error: 'Failed to fetch popular anime' });
+        res.json([]);
     }
 });
 
@@ -784,13 +838,24 @@ app.get('/api/anime/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json([]);
     try {
-        const response = await axios.get(`${JIKAN_BASE}/anime?q=${encodeURIComponent(q)}&limit=20`);
-        let results = (response.data?.data || []).map(formatAnime);
+        const query = 'query($search: String) { Page(page: 1, perPage: 20) { media(type: ANIME, search: $search, sort: POPULARITY_DESC) { id idMal title { english romaji } coverImage { extraLarge large } bannerImage averageScore description seasonYear episodes status } } }';
+        let results = await fetchAniList(query, { search: q });
+
+        if (!results || results.length === 0) {
+            try {
+                const response = await axios.get(`${JIKAN_BASE}/anime?q=${encodeURIComponent(q)}&limit=20`, { timeout: 5000 });
+                results = (response.data?.data || []).map(formatAnime);
+            } catch (e) {
+                console.warn('[Jikan] Anime search failed:', e.message);
+                results = [];
+            }
+        }
+
         results = rankSearchResults(results, q);
         res.json(results);
     } catch (error) {
         console.error("Error searching anime:", error.message);
-        res.status(500).json({ error: 'Failed to search anime' });
+        res.json([]);
     }
 });
 
@@ -798,22 +863,74 @@ app.get('/api/anime/search', async (req, res) => {
 app.get('/api/anime/details/:malId', async (req, res) => {
     try {
         const { malId } = req.params;
-        const [animeRes, episodesRes] = await Promise.all([
-            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/full`).catch(e => {
-                console.error("Failed to fetch anime details from Jikan:", e.message);
-                throw e;
-            }),
-            fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/episodes`).catch(e => {
-                console.warn("Failed to fetch anime episodes from Jikan:", e.message);
-                return { data: { data: [] } };
-            })
-        ]);
+        let anime = null;
+        let episodesRes = { data: { data: [] } };
 
-        const anime = animeRes.data.data;
+        try {
+            const [animeData, epData] = await Promise.all([
+                fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/full`, { timeout: 6000 }, 1, 500).catch(e => {
+                    console.warn('[AnimeDetails] Jikan details failed:', e.message);
+                    return null;
+                }),
+                fetchWithRetry(`${JIKAN_BASE}/anime/${malId}/episodes`, { timeout: 6000 }, 1, 500).catch(e => {
+                    console.warn('[AnimeDetails] Jikan episodes failed:', e.message);
+                    return { data: { data: [] } };
+                })
+            ]);
+            if (animeData?.data?.data) anime = animeData.data.data;
+            if (epData) episodesRes = epData;
+        } catch (e) {
+            console.warn('[AnimeDetails] Jikan primary fetch error:', e.message);
+        }
+
+        // If Jikan details failed, fallback to AniList GraphQL
+        if (!anime) {
+            try {
+                const alQuery = `
+                    query($id: Int) {
+                        Media(idMal: $id, type: ANIME) {
+                            id idMal title { english romaji } coverImage { extraLarge large } bannerImage averageScore description seasonYear episodes status genres studios { nodes { name } } trailer { site id }
+                        }
+                    }
+                `;
+                const alRes = await axios.post(
+                    'https://graphql.anilist.co',
+                    { query: alQuery, variables: { id: parseInt(malId) } },
+                    { headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, timeout: 6000 }
+                );
+                const alData = alRes.data?.data?.Media;
+                if (alData) {
+                    const formatted = formatAniList(alData);
+                    const epCount = alData.episodes || 12;
+                    const generatedEps = Array.from({ length: epCount }, (_, i) => ({
+                        id: `ep-${i + 1}`,
+                        name: `Episode ${i + 1}`,
+                        number: i + 1,
+                        season: 1,
+                        summary: '',
+                        image: null
+                    }));
+                    return res.json({
+                        ...formatted,
+                        genres: alData.genres || [],
+                        studios: alData.studios?.nodes?.map(s => s.name) || [],
+                        trailer: alData.trailer?.site === 'youtube' ? `https://www.youtube.com/embed/${alData.trailer.id}` : null,
+                        episodes: generatedEps,
+                        source: 'anilist'
+                    });
+                }
+            } catch (alErr) {
+                console.warn('[AnimeDetails] AniList fallback failed:', alErr.message);
+            }
+        }
+
+        if (!anime) {
+            return res.status(404).json({ error: 'Anime details not found' });
+        }
 
         // Jikan episodes are blocked on cloud IPs — use for filler/recap flags only
         const jikanMeta = {};
-        (episodesRes.data.data || []).forEach(ep => {
+        (episodesRes.data?.data || []).forEach(ep => {
             jikanMeta[ep.mal_id] = { filler: ep.filler, recap: ep.recap, aired: ep.aired };
         });
 
@@ -833,9 +950,9 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                     const [withYear, withoutYear] = await Promise.all([
                         year
-                            ? axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`, { timeout: 10000 }).catch(e => { console.warn('[AnimeDetails] TMDB year-search failed:', e.message); return null; })
+                            ? axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&first_air_date_year=${year}&language=en-US`, { timeout: 8000 }).catch(e => { console.warn('[AnimeDetails] TMDB year-search failed:', e.message); return null; })
                             : Promise.resolve(null),
-                        axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`, { timeout: 10000 }).catch(e => { console.warn('[AnimeDetails] TMDB search failed:', e.message); return null; })
+                        axios.get(`${TMDB_BASE}/search/tv?api_key=${TMDB_KEY}&query=${searchQuery}&language=en-US`, { timeout: 8000 }).catch(e => { console.warn('[AnimeDetails] TMDB search failed:', e.message); return null; })
                     ]);
 
                     const results = (withYear?.data?.results?.length ? withYear.data.results : withoutYear?.data?.results) || [];
@@ -844,7 +961,7 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                     const tvRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}?api_key=${TMDB_KEY}&language=en-US`,
-                        { timeout: 10000 }
+                        { timeout: 8000 }
                     ).catch(e => { console.warn('[AnimeDetails] TMDB tv-details failed:', e.message); return null; });
 
                     const seasons = (tvRes?.data?.seasons || []).filter(s => s.season_number > 0);
@@ -866,10 +983,9 @@ app.get('/api/anime/details/:malId', async (req, res) => {
 
                     const seasonRes = await axios.get(
                         `${TMDB_BASE}/tv/${tmdb_id}/season/${bestSeasonNum}?api_key=${TMDB_KEY}&language=en-US`,
-                        { timeout: 10000 }
+                        { timeout: 8000 }
                     ).catch(e => { console.warn('[AnimeDetails] TMDB season-fetch failed:', e.message); return null; });
 
-                    // Build episode list from TMDB — thumbnails come directly from still_path
                     episodes = (seasonRes?.data?.episodes || []).map(ep => {
                         const m = jikanMeta[ep.episode_number] || {};
                         return {
@@ -887,7 +1003,6 @@ app.get('/api/anime/details/:malId', async (req, res) => {
                         };
                     });
 
-                    // Pad remaining episodes up to MAL's total count (no thumbnail, but selectable)
                     const malTotal = anime.episodes || 0;
                     for (let i = episodes.length + 1; i <= malTotal; i++) {
                         const m = jikanMeta[i] || {};
@@ -909,7 +1024,7 @@ app.get('/api/anime/details/:malId', async (req, res) => {
                     const alRes = await axios.post(
                         'https://graphql.anilist.co',
                         { query: 'query($id:Int){Media(idMal:$id,type:ANIME){id}}', variables: { id: parseInt(malId) } },
-                        { headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, timeout: 7000 }
+                        { headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, timeout: 6000 }
                     );
                     anilist_id = alRes.data?.data?.Media?.id || null;
                 } catch (e) {
@@ -918,7 +1033,6 @@ app.get('/api/anime/details/:malId', async (req, res) => {
             })()
         ]);
 
-        // Final fallback: if TMDB returned nothing, generate bare episode stubs from MAL count
         if (episodes.length === 0) {
             const count = anime.episodes || 0;
             for (let i = 1; i <= count; i++) {
@@ -943,7 +1057,7 @@ app.get('/api/anime/details/:malId', async (req, res) => {
         });
     } catch (error) {
         console.error("Error fetching anime details:", error.message);
-        res.status(500).json({ error: 'Failed to fetch anime details' });
+        res.status(404).json({ error: 'Failed to fetch anime details' });
     }
 });
 

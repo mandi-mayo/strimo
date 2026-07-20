@@ -93,12 +93,17 @@ export default function Home() {
     setLoadingTrending(true);
     setLoadingPopular(true);
 
+    const safeGet = (endpoint) => api.get(endpoint).catch(err => {
+      console.warn(`[Home] Fetch failed for ${endpoint}:`, err.message);
+      return { data: [] };
+    });
+
     Promise.all([
-      api.get(`trending`),
-      api.get(`popular/movies`),
-      api.get(`popular/tv`),
-      api.get(`anime/popular`),
-      api.get(`upcoming`)
+      safeGet('trending'),
+      safeGet('popular/movies'),
+      safeGet('popular/tv'),
+      safeGet('anime/popular'),
+      safeGet('upcoming')
     ]).then(([trendingRes, moviesRes, tvRes, animeRes, upcomingRes]) => {
       setTrending(trendingRes.data || []);
       setPopularMovies(moviesRes.data || []);
