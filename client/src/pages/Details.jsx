@@ -188,68 +188,54 @@ export default function Details() {
 
       }
     } else if (type === 'series') {
-      if (tmdbId) {
-        sources.push({
-          name: 'VidFast',
-          url: `https://vidfast.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
-          priority: 1
-        });
-      }
       sources.push({
         name: 'VidSrc ME',
         url: imdbId
           ? `https://vidsrcme.su/embed/tv?imdb=${imdbId}&season=${currentSeason}&episode=${currentEpisode}`
           : `https://vidsrcme.su/embed/tv?tmdb=${tmdbId}&season=${currentSeason}&episode=${currentEpisode}`,
-        priority: 2
+        priority: 1
       });
       if (tmdbId) {
         sources.push({
           name: 'VidLink',
           url: `https://vidlink.pro/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+          priority: 2
+        });
+        sources.push({
+          name: 'VidFast',
+          url: `https://vidfast.vc/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
           priority: 3
         });
         sources.push({
           name: 'Videasy',
-          url: `https://player.videasy.net/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
+          url: `https://player.videasy.to/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
           priority: 4
-        });
-        sources.push({
-          name: 'VidRock',
-          url: `https://vidrock.ru/tv/${tmdbId}/${currentSeason}/${currentEpisode}`,
-          priority: 5
         });
       }
     } else {
       // Movies
-      if (tmdbId) {
-        sources.push({
-          name: 'VidFast',
-          url: `https://vidfast.pro/movie/${tmdbId}`,
-          priority: 1
-        });
-      }
       sources.push({
         name: 'VidSrc ME',
         url: imdbId
           ? `https://vidsrcme.su/embed/movie?imdb=${imdbId}`
           : `https://vidsrcme.su/embed/movie?tmdb=${tmdbId}`,
-        priority: 2
+        priority: 1
       });
       if (tmdbId) {
         sources.push({
           name: 'VidLink',
           url: `https://vidlink.pro/movie/${tmdbId}`,
+          priority: 2
+        });
+        sources.push({
+          name: 'VidFast',
+          url: `https://vidfast.vc/movie/${tmdbId}`,
           priority: 3
         });
         sources.push({
           name: 'Videasy',
-          url: `https://player.videasy.net/movie/${tmdbId}`,
+          url: `https://player.videasy.to/movie/${tmdbId}`,
           priority: 4
-        });
-        sources.push({
-          name: 'VidRock',
-          url: `https://vidrock.ru/movie/${tmdbId}`,
-          priority: 5
         });
       }
     }
